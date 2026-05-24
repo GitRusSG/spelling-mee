@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Minimal Jest config for pure TypeScript property-based tests.
- * Bypasses jest-expo's setup.js which fails in this environment
- * when running pure TS tests that don't need React Native mocks.
+ * Jest config for pure TypeScript tests (property-based and unit tests
+ * that don't require a full React Native environment).
+ * Bypasses jest-expo's setup.js which fails outside a simulator.
  */
 module.exports = {
   testEnvironment: 'node',
@@ -19,5 +19,8 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|fast-check)',
   ],
-  testMatch: ['**/__tests__/**/*.property.test.ts'],
+  testMatch: [
+    '**/__tests__/**/*.property.test.ts',
+    '**/__tests__/**/*.test.ts',
+  ],
 };
