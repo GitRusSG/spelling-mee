@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router';
 import { useWordList } from '../src/contexts/WordListContext';
 import { useSubscription } from '../src/contexts/SubscriptionContext';
 import WordListCard from '../src/components/WordListCard';
-import AdBanner from '../src/components/AdBanner';
 
 export default function HomeScreen() {
   const { lists } = useWordList();
@@ -66,10 +65,20 @@ export default function HomeScreen() {
         >
           <Text style={styles.createButtonText}>+ Create New List</Text>
         </TouchableOpacity>
-      </ScrollView>
 
-      {/* Ad Banner at the bottom for non-subscribers */}
-      {!isSubscribed && <AdBanner />}
+        {/* Subscription link */}
+        <TouchableOpacity
+          style={styles.subscriptionLink}
+          onPress={() => router.push('/subscription')}
+          accessibilityRole="button"
+          accessibilityLabel={isSubscribed ? 'Manage subscription' : 'Remove ads'}
+          testID="subscription-link"
+        >
+          <Text style={styles.subscriptionLinkText}>
+            {isSubscribed ? 'Manage subscription' : 'Remove ads'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -120,5 +129,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  subscriptionLink: {
+    alignItems: 'center',
+    marginTop: 16,
+    paddingVertical: 10,
+  },
+  subscriptionLinkText: {
+    color: '#2196F3',
+    fontSize: 14,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
 });

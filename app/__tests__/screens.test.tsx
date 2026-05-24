@@ -125,13 +125,11 @@ describe('HomeScreen', () => {
   });
 
   it('renders AdBanner for non-subscribers', () => {
-    const { UNSAFE_getByType } = render(<HomeScreen />);
-    // AdBanner renders a BannerAd component (mocked as string 'BannerAd')
-    // We verify the component tree includes it by checking the mock renders
-    const { getByText } = render(<HomeScreen />);
-    // The AdBanner is conditionally rendered; since isSubscribed is false, it should be present
-    // We can verify by checking the component doesn't throw and renders the full tree
-    expect(getByText('Spelling Mee')).toBeTruthy();
+    // AdBanner is now rendered in the root layout, not the home screen.
+    // The home screen instead shows a "Remove ads" link for non-subscribers.
+    const { getByTestId, getByText } = render(<HomeScreen />);
+    expect(getByTestId('subscription-link')).toBeTruthy();
+    expect(getByText('Remove ads')).toBeTruthy();
   });
 });
 
