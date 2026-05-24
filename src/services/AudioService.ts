@@ -1,5 +1,4 @@
-import { createAudioPlayer } from 'expo-audio';
-import * as Speech from 'expo-speech';
+import { Platform } from 'react-native';
 import { AudioUnavailableError } from '../types/errors';
 
 /**
@@ -7,6 +6,12 @@ import { AudioUnavailableError } from '../types/errors';
  * Uses a static asset map — words without a pre-recorded file throw immediately.
  */
 async function playWithAsset(word: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    throw new Error('No audio assets on web');
+  }
+
+  const { createAudioPlayer } = require('expo-audio');
+
   // Static asset map: add entries here as audio files are added to assets/audio/
   const assetMap: Record<string, ReturnType<typeof require>> = {
     // e.g. accommodate: require('../../assets/audio/accommodate.mp3'),
@@ -35,13 +40,29 @@ async function playWithAsset(word: string): Promise<void> {
 
 /**
  * Falls back to text-to-speech using British English.
+ * On web, uses the Web Speech API.
  */
 async function playWithTTS(word: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    return new Promise<void>((resolve, reject) => {
+      if (!('speechSynthesis' in window)) {
+        reject(new Error('Web Speech API not supported'));
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'en-GB';
+      utterance.onend = () => resolve();
+      utterance.onerror = (e) => reject(e);
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+  const Speech = require('expo-speech');
   return new Promise<void>((resolve, reject) => {
     Speech.speak(word, {
       language: 'en-GB',
       onDone: resolve,
-      onError: (error) => reject(error),
+      onError: (error: any) => reject(error),
     });
   });
 }

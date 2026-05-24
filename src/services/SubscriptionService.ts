@@ -1,14 +1,4 @@
-import {
-  initConnection,
-  getSubscriptions,
-  requestSubscription,
-  getPurchaseHistory,
-  finishTransaction,
-  purchaseErrorListener,
-  purchaseUpdatedListener,
-  type SubscriptionPurchase,
-  type PurchaseError as IAPPurchaseError,
-} from 'react-native-iap';
+import { Platform } from 'react-native';
 import { SubscriptionStatus } from '../types';
 import { PurchaseError } from '../types/errors';
 
@@ -17,31 +7,31 @@ export interface PurchaseResult {
   expiresAt?: string | null;
 }
 
-/**
- * Derives a SubscriptionStatus from a purchase record.
- * A purchase is considered active if its expiry date is in the future (or unknown).
- */
-function statusFromPurchase(purchase: SubscriptionPurchase): SubscriptionStatus {
-  const expiryMs = purchase.transactionDate
-    ? Number(purchase.transactionDate) + 30 * 24 * 60 * 60 * 1000 // assume 30-day sub if no explicit expiry
-    : null;
-  if (expiryMs && expiryMs < Date.now()) return 'expired';
-  return 'active';
-}
-
 export const SubscriptionService = {
   getStatus(): SubscriptionStatus {
-    // Synchronous status is read from MMKV by SubscriptionContext; this is a no-op stub.
     return 'none';
   },
 
   async purchase(productId: string): Promise<PurchaseResult> {
+    if (Platform.OS === 'web') {
+      // IAP not available on web
+      throw new PurchaseError('WEB_UNSUPPORTED', 'In-app purchases are not available on web. Please use the mobile app.');
+    }
+
+    const {
+      initConnection,
+      requestSubscription,
+      finishTransaction,
+      purchaseErrorListener,
+      purchaseUpdatedListener,
+    } = require('react-native-iap');
+
     try {
       await initConnection();
 
       return await new Promise<PurchaseResult>((resolve, reject) => {
         const purchaseUpdateSub = purchaseUpdatedListener(
-          async (purchase: SubscriptionPurchase) => {
+          async (purchase: any) => {
             try {
               await finishTransaction({ purchase, isConsumable: false });
               purchaseUpdateSub.remove();
@@ -62,7 +52,7 @@ export const SubscriptionService = {
           }
         );
 
-        const purchaseErrorSub = purchaseErrorListener((error: IAPPurchaseError) => {
+        const purchaseErrorSub = purchaseErrorListener((error: any) => {
           purchaseUpdateSub.remove();
           purchaseErrorSub.remove();
           reject(
@@ -94,6 +84,12 @@ export const SubscriptionService = {
   },
 
   async restore(): Promise<PurchaseResult> {
+    if (Platform.OS === 'web') {
+      throw new PurchaseError('WEB_UNSUPPORTED', 'Restore purchases is not available on web. Please use the mobile app.');
+    }
+
+    const { initConnection, getPurchaseHistory } = require('react-native-iap');
+
     try {
       await initConnection();
       const history = await getPurchaseHistory();
@@ -102,15 +98,14 @@ export const SubscriptionService = {
         return { status: 'none', expiresAt: null };
       }
 
-      // Use the most recent purchase
-      const latest = history[history.length - 1] as SubscriptionPurchase;
-      const status = statusFromPurchase(latest);
-      const expiresAt =
-        status === 'active' && latest.transactionDate
-          ? new Date(
-              Number(latest.transactionDate) + 30 * 24 * 60 * 60 * 1000
-            ).toISOString()
-          : null;
+      const latest = history[history.length - 1];
+      const expiryMs = latest.transactionDate
+        ? Number(latest.transactionDate) + 30 * 24 * 60 * 60 * 1000
+        : null;
+      const status: SubscriptionStatus = expiryMs && expiryMs < Date.now() ? 'expired' : 'active';
+      const expiresAt = status === 'active' && latest.transactionDate
+        ? new Date(Number(latest.transactionDate) + 30 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
       return { status, expiresAt };
     } catch (err: any) {

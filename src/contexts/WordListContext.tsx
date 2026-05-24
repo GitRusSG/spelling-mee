@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { MMKV } from 'react-native-mmkv';
 import { WordList, CustomWordList } from '../types';
 import { ValidationError } from '../types/errors';
 import { validateListName, validateWordList } from '../utils/validation';
 import { WordListRepository } from '../services/WordListRepository';
 import { BUILTIN_LISTS } from '../data/builtinLists';
+import { createStorage } from '../services/storage';
 
-const storage = new MMKV({ id: 'word-lists' });
+const storage = createStorage();
 const repository = new WordListRepository(storage, BUILTIN_LISTS);
 
 interface WordListContextValue {

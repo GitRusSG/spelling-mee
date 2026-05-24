@@ -1,13 +1,13 @@
-import { MMKV } from 'react-native-mmkv';
 import { WordList, CustomWordList, BuiltinWordList } from '../types';
+import { KVStorage } from './storage';
 
 const CUSTOM_LISTS_KEY = 'custom_lists';
 
 export class WordListRepository {
-  private storage: MMKV;
+  private storage: KVStorage;
   private builtinLists: BuiltinWordList[];
 
-  constructor(storage: MMKV, builtinLists: BuiltinWordList[]) {
+  constructor(storage: KVStorage, builtinLists: BuiltinWordList[]) {
     this.storage = storage;
     this.builtinLists = builtinLists;
   }

@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { MMKV } from 'react-native-mmkv';
 import { SubscriptionState, SubscriptionStatus } from '../types';
 import { SubscriptionService } from '../services/SubscriptionService';
+import { createStorage } from '../services/storage';
 
 const STORAGE_KEY = 'subscription';
-const storage = new MMKV({ id: 'subscription' });
+const storage = createStorage();
 
 const DEFAULT_STATE: SubscriptionState = {
   status: 'none',

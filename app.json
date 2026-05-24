@@ -22,7 +22,8 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "baseUrl": "/spelling-mee"
     },
     "plugins": [
       "expo-router"

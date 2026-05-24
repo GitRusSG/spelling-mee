@@ -1,13 +1,11 @@
 import React from 'react';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { shouldShowAd } from '../services/AdService';
 
-// Use test ad unit ID during development; replace with real ID for production
-const AD_UNIT_ID = __DEV__ ? TestIds.BANNER : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
-
 /**
  * Renders a Google AdMob banner when the user does not have an active subscription.
+ * On web, renders a placeholder. On native, renders the real AdMob banner.
  * Renders nothing when the user is subscribed.
  */
 export default function AdBanner() {
@@ -17,6 +15,18 @@ export default function AdBanner() {
     return null;
   }
 
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.webBanner}>
+        <Text style={styles.webBannerText}>Ad Space</Text>
+      </View>
+    );
+  }
+
+  // Native: use real AdMob
+  const { BannerAd, BannerAdSize, TestIds } = require('react-native-google-mobile-ads');
+  const AD_UNIT_ID = __DEV__ ? TestIds.BANNER : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX';
+
   return (
     <BannerAd
       unitId={AD_UNIT_ID}
@@ -25,3 +35,18 @@ export default function AdBanner() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  webBanner: {
+    height: 50,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  webBannerText: {
+    color: '#999',
+    fontSize: 12,
+  },
+});
