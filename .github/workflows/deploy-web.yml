@@ -33,18 +33,20 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Fix asset paths for GitHub Pages subdirectory
+      - name: Prepare for GitHub Pages subdirectory deployment
         run: |
-          sed -i 's|src="/_expo/|src="/spelling-mee/_expo/|g' dist/index.html
-          sed -i 's|href="/_expo/|href="/spelling-mee/_expo/|g' dist/index.html
-
-      - name: Create 404.html for SPA routing
-        run: cp dist/index.html dist/404.html
+          # Move everything into a subdirectory matching the repo name
+          mkdir -p deploy/spelling-mee
+          cp -r dist/* deploy/spelling-mee/
+          # Create a root index.html that redirects to the subdirectory
+          echo '<meta http-equiv="refresh" content="0;url=/spelling-mee/">' > deploy/index.html
+          # Copy 404.html to root for SPA fallback routing
+          cp deploy/spelling-mee/index.html deploy/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: deploy
 
   deploy:
     environment:
