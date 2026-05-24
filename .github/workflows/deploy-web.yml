@@ -32,12 +32,14 @@ jobs:
         run: npx expo export --platform web
         env:
           NODE_ENV: production
-          EXPO_BASE_URL: /spelling-mee
 
-      - name: Fix asset paths for GitHub Pages
+      - name: Fix asset paths for GitHub Pages subdirectory
         run: |
-          find dist -name "*.html" -exec sed -i 's|src="/_expo/|src="/spelling-mee/_expo/|g' {} \;
-          find dist -name "*.html" -exec sed -i 's|href="/_expo/|href="/spelling-mee/_expo/|g' {} \;
+          sed -i 's|src="/_expo/|src="/spelling-mee/_expo/|g' dist/index.html
+          sed -i 's|href="/_expo/|href="/spelling-mee/_expo/|g' dist/index.html
+
+      - name: Create 404.html for SPA routing
+        run: cp dist/index.html dist/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
