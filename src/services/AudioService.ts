@@ -40,7 +40,7 @@ async function playWithAsset(word: string): Promise<void> {
 
 /**
  * Falls back to text-to-speech using British English.
- * On web, uses the Web Speech API.
+ * On web, uses the Web Speech API with the best available en-GB voice.
  */
 async function playWithTTS(word: string): Promise<void> {
   if (Platform.OS === 'web') {
@@ -51,6 +51,18 @@ async function playWithTTS(word: string): Promise<void> {
       }
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-GB';
+      utterance.rate = 0.85;
+      utterance.pitch = 1.0;
+
+      // Try to find a high-quality en-GB voice
+      const voices = window.speechSynthesis.getVoices();
+      const enGBVoice = voices.find(v => v.lang === 'en-GB' && v.name.includes('Female'))
+        || voices.find(v => v.lang === 'en-GB')
+        || voices.find(v => v.lang.startsWith('en'));
+      if (enGBVoice) {
+        utterance.voice = enGBVoice;
+      }
+
       utterance.onend = () => resolve();
       utterance.onerror = (e) => reject(e);
       window.speechSynthesis.speak(utterance);
