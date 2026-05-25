@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, View, Text, StyleSheet } from 'react-native';
+import { Platform, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { shouldShowAd } from '../services/AdService';
 
@@ -18,15 +18,20 @@ export default function AdBanner() {
   if (Platform.OS === 'web') {
     return (
       <View style={styles.webBanner}>
-        <View style={styles.webBannerInner}>
-          <Text style={styles.adLabel}>Advertisement</Text>
-          <View style={styles.adContent}>
-            <View style={styles.adIcon} />
-            <View style={styles.adTextBlock}>
-              <Text style={styles.adTitle}>Ad Space — Your Brand Here</Text>
-              <Text style={styles.adDescription}>Sponsored content will appear in this area</Text>
-            </View>
+        <View style={styles.adLabelContainer}>
+          <Text style={styles.adLabel}>Ad</Text>
+        </View>
+        <View style={styles.adContent}>
+          <Text style={styles.adIcon}>📚</Text>
+          <View style={styles.adTextBlock}>
+            <Text style={styles.adTitle}>Learn 1000+ Words!</Text>
+            <Text style={styles.adDescription}>
+              Download WordMaster Pro — Free for 7 days
+            </Text>
           </View>
+          <TouchableOpacity style={styles.installButton} activeOpacity={0.8}>
+            <Text style={styles.installButtonText}>Install</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -47,52 +52,64 @@ export default function AdBanner() {
 
 const styles = StyleSheet.create({
   webBanner: {
-    backgroundColor: '#FAFAFA',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  webBannerInner: {
-    alignItems: 'center',
-  },
-  adLabel: {
-    fontSize: 10,
-    color: '#9E9E9E',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  adContent: {
+    height: 60,
+    backgroundColor: '#0A2E4D',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 6,
-    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    width: '100%',
+    position: 'relative',
+  },
+  adLabelContainer: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  adLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  adContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     maxWidth: 468,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   adIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    backgroundColor: '#BBDEFB',
+    fontSize: 28,
     marginRight: 10,
   },
   adTextBlock: {
     flex: 1,
+    marginRight: 12,
   },
   adTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#424242',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   adDescription: {
     fontSize: 11,
-    color: '#757575',
+    color: '#B0D4F1',
+  },
+  installButton: {
+    backgroundColor: '#00C853',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+  },
+  installButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
