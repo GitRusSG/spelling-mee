@@ -9,11 +9,14 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTestSession } from '../../src/contexts/TestSessionContext';
 import { useWordList } from '../../src/contexts/WordListContext';
+import { useSubscription } from '../../src/contexts/SubscriptionContext';
 import { AudioService } from '../../src/services/AudioService';
 import { AudioUnavailableError } from '../../src/types/errors';
+import { shouldShowAd } from '../../src/services/AdService';
 import ProgressIndicator from '../../src/components/ProgressIndicator';
 import AudioButton from '../../src/components/AudioButton';
 import LetterKeyboard from '../../src/components/LetterKeyboard';
+import InterstitialAd from '../../src/components/InterstitialAd';
 import { InputMode } from '../../src/types';
 
 type AudioButtonState = 'idle' | 'loading' | 'playing' | 'error';
@@ -28,6 +31,7 @@ export default function TestScreen() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
   const router = useRouter();
   const { getById } = useWordList();
+  const { status: subscriptionStatus } = useSubscription();
   const {
     wordList: sessionWordList,
     currentIndex,
@@ -43,17 +47,22 @@ export default function TestScreen() {
   const [initialized, setInitialized] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>('text');
   const [letterSequence, setLetterSequence] = useState('');
+  const [showAd, setShowAd] = useState(() => shouldShowAd(subscriptionStatus));
 
-  // Initialize session on mount
+  const handleAdClose = useCallback(() => {
+    setShowAd(false);
+  }, []);
+
+  // Initialize session on mount (only after ad is dismissed)
   useEffect(() => {
-    if (initialized) return;
+    if (initialized || showAd) return;
     const wordList = getById(listId);
     if (!wordList) return;
 
     initSession(wordList, 'text');
     setInitialized(true);
     playWord(wordList.words[0]);
-  }, [listId, initialized]);
+  }, [listId, initialized, showAd]);
 
   // Navigate to results when test is complete
   useEffect(() => {
@@ -150,6 +159,7 @@ export default function TestScreen() {
 
   return (
     <View style={styles.container}>
+      <InterstitialAd visible={showAd} onClose={handleAdClose} />
       <ProgressIndicator
         current={currentIndex + 1}
         total={sessionWordList.words.length}
