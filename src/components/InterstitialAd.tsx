@@ -47,49 +47,48 @@ export default function InterstitialAd({ visible, onClose }: InterstitialAdProps
       </View>
 
       {/* Countdown or close button in top-right corner */}
-        <View style={styles.topRight}>
-          {canClose ? (
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              testID="interstitial-close-button"
-              accessibilityRole="button"
-              accessibilityLabel="Close ad"
-            >
-              <Text style={styles.closeButtonText}>✕ Close</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.countdownBadge}>
-              <Text style={styles.countdownText}>Skip in {countdown}...</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Ad content card */}
-        <View style={styles.card}>
-          {/* Fake app icon */}
-          <View style={styles.appIcon}>
-            <Text style={styles.appIconText}>W</Text>
-          </View>
-
-          <Text style={styles.headline}>📖 Expand Your Vocabulary!</Text>
-          <Text style={styles.description}>
-            WordMaster Pro — The #1 vocabulary app for kids
-          </Text>
-
-          <View style={styles.starsRow}>
-            <Text style={styles.stars}>⭐⭐⭐⭐⭐</Text>
-            <Text style={styles.ratingText}>4.8 • 50K+ downloads</Text>
-          </View>
-
+      <View style={styles.topRight}>
+        {canClose ? (
           <TouchableOpacity
-            style={styles.installButton}
-            activeOpacity={0.8}
-            testID="interstitial-install-button"
+            style={styles.closeButton}
+            onPress={onClose}
+            testID="interstitial-close-button"
+            accessibilityRole="button"
+            accessibilityLabel="Close ad"
           >
-            <Text style={styles.installButtonText}>Install Now</Text>
+            <Text style={styles.closeButtonText}>✕ Close</Text>
           </TouchableOpacity>
+        ) : (
+          <View style={styles.countdownBadge}>
+            <Text style={styles.countdownText}>Skip in {countdown}...</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Ad content card */}
+      <View style={styles.card}>
+        {/* Fake app icon */}
+        <View style={styles.appIcon}>
+          <Text style={styles.appIconText}>W</Text>
         </View>
+
+        <Text style={styles.headline}>📖 Expand Your Vocabulary!</Text>
+        <Text style={styles.description}>
+          WordMaster Pro — The #1 vocabulary app for kids
+        </Text>
+
+        <View style={styles.starsRow}>
+          <Text style={styles.stars}>⭐⭐⭐⭐⭐</Text>
+          <Text style={styles.ratingText}>4.8 • 50K+ downloads</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.installButton}
+          activeOpacity={0.8}
+          testID="interstitial-install-button"
+        >
+          <Text style={styles.installButtonText}>Install Now</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

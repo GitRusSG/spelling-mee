@@ -53,16 +53,26 @@ export default function TestScreen() {
     setShowAd(false);
   }, []);
 
-  // Initialize session on mount (only after ad is dismissed)
+  // Initialize session on mount
   useEffect(() => {
-    if (initialized || showAd) return;
+    if (initialized) return;
     const wordList = getById(listId);
     if (!wordList) return;
 
     initSession(wordList, 'text');
     setInitialized(true);
-    playWord(wordList.words[0]);
-  }, [listId, initialized, showAd]);
+    // Only play the first word after ad is dismissed
+    if (!showAd) {
+      playWord(wordList.words[0]);
+    }
+  }, [listId, initialized]);
+
+  // Play first word when ad closes
+  useEffect(() => {
+    if (!showAd && initialized && sessionWordList) {
+      playWord(sessionWordList.words[0]);
+    }
+  }, [showAd]);
 
   // Navigate to results when test is complete
   useEffect(() => {
@@ -152,8 +162,8 @@ export default function TestScreen() {
   if (!sessionWordList) {
     return (
       <View style={styles.container}>
-        <InterstitialAd visible={showAd} onClose={handleAdClose} />
-        {!showAd && <Text style={styles.loadingText}>Loading...</Text>}
+        {showAd && <InterstitialAd visible={showAd} onClose={handleAdClose} />}
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
