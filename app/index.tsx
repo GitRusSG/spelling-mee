@@ -33,7 +33,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Spelling Mee</Text>
+        <Text style={styles.title}>🐝 Spelling Mee</Text>
 
         {/* Auth Status */}
         <View style={styles.authRow}>
@@ -63,7 +63,7 @@ export default function HomeScreen() {
 
         {/* Built-in Lists Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Built-in Lists</Text>
+          <Text style={styles.sectionTitle}>📚 Built-in Lists</Text>
           {builtinLists.map((list) => (
             <WordListCard
               key={list.id}
@@ -75,10 +75,10 @@ export default function HomeScreen() {
 
         {/* Custom Lists Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Lists</Text>
+          <Text style={styles.sectionTitle}>✏️ My Lists</Text>
           {customLists.length === 0 ? (
             <Text style={styles.emptyText}>
-              No custom lists yet. Create one to get started!
+              You haven't made any lists yet. Tap the button below to create your first one! 🌟
             </Text>
           ) : (
             customLists.map((list) => (
@@ -99,7 +99,7 @@ export default function HomeScreen() {
           accessibilityLabel="Create new list"
           testID="create-list-button"
         >
-          <Text style={styles.createButtonText}>+ Create New List</Text>
+          <Text style={styles.createButtonText}>✨ Create New List</Text>
         </TouchableOpacity>
 
         {/* Subscription link */}
@@ -122,7 +122,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3E5F5',
   },
   scrollView: {
     flex: 1,
@@ -132,9 +132,9 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
-    color: '#333',
+    color: '#4A148C',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -154,41 +154,46 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     fontSize: 13,
-    color: '#E53935',
+    color: '#FF5252',
     fontWeight: '500',
   },
   signInText: {
     fontSize: 14,
-    color: '#2196F3',
-    fontWeight: '500',
+    color: '#7C4DFF',
+    fontWeight: '600',
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#555',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4A148C',
     marginBottom: 12,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 15,
+    color: '#7C4DFF',
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: 16,
   },
   createButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   createButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   subscriptionLink: {
     alignItems: 'center',
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   subscriptionLinkText: {
-    color: '#2196F3',
+    color: '#7C4DFF',
     fontSize: 14,
     fontWeight: '500',
     textDecorationLine: 'underline',

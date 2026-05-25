@@ -143,7 +143,7 @@ export default function TestScreen() {
   if (!sessionWordList) {
     return (
       <View style={styles.container}>
-        <Text>Loading...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
@@ -175,8 +175,8 @@ export default function TestScreen() {
             testID="feedback-text"
           >
             {feedback.correct
-              ? '✓ Correct!'
-              : `✗ Incorrect — the correct spelling is "${feedback.word}"`}
+              ? '🎉 Awesome!'
+              : `Almost! The word is "${feedback.word}" 😅`}
           </Text>
         </View>
       )}
@@ -190,7 +190,7 @@ export default function TestScreen() {
           accessibilityLabel={`Switch to ${inputMode === 'text' ? 'letter-by-letter' : 'text'} mode`}
         >
           <Text style={styles.modeToggleText}>
-            {inputMode === 'text' ? 'Switch to Letter Mode' : 'Switch to Text Mode'}
+            {inputMode === 'text' ? '🔤 Switch to Letter Mode' : '⌨️ Switch to Text Mode'}
           </Text>
         </TouchableOpacity>
 
@@ -219,7 +219,7 @@ export default function TestScreen() {
               accessibilityRole="button"
               accessibilityLabel="Submit answer"
             >
-              <Text style={styles.submitButtonText}>Submit</Text>
+              <Text style={styles.submitButtonText}>Submit ✨</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -246,7 +246,7 @@ export default function TestScreen() {
               accessibilityRole="button"
               accessibilityLabel="Submit answer"
             >
-              <Text style={styles.submitButtonText}>Submit</Text>
+              <Text style={styles.submitButtonText}>Submit ✨</Text>
             </TouchableOpacity>
           </>
         )}
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: '#F3E5F5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -273,44 +273,55 @@ const styles = StyleSheet.create({
   },
   textInput: {
     width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 18,
+    borderWidth: 2,
+    borderColor: '#CE93D8',
+    borderRadius: 16,
+    padding: 14,
+    fontSize: 20,
     marginBottom: 16,
+    backgroundColor: '#fff',
+    color: '#4A148C',
   },
   submitButton: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#FF6D00',
+    borderRadius: 12,
+    paddingVertical: 16,
     paddingHorizontal: 32,
     minWidth: 160,
+    minHeight: 48,
     alignItems: 'center',
+    shadowColor: '#FF6D00',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitButtonDisabled: {
-    backgroundColor: '#A0C4E8',
+    backgroundColor: '#FFAB91',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   feedbackContainer: {
     width: '100%',
-    padding: 12,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 16,
     marginVertical: 12,
   },
   correctFeedback: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#C8E6C9',
   },
   incorrectFeedback: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FFCDD2',
   },
   feedbackText: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
   },
   correctText: {
     color: '#2E7D32',
@@ -322,36 +333,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#C62828',
   },
+  loadingText: {
+    fontSize: 16,
+    color: '#4A148C',
+  },
   modeToggleButton: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#DDD',
+    borderWidth: 2,
+    borderColor: '#CE93D8',
+    minHeight: 48,
   },
   modeToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4A90D9',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#7C4DFF',
     textAlign: 'center',
   },
   letterDisplay: {
     width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 2,
+    borderColor: '#CE93D8',
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 16,
-    minHeight: 48,
+    minHeight: 56,
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   letterDisplayText: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 26,
+    fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 4,
-    color: '#333',
+    color: '#4A148C',
   },
 });

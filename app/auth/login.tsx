@@ -76,7 +76,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Sign In</Text>
+          <Text style={styles.title}>🐝 Sign In</Text>
           <Text style={styles.subtitle}>Sign in to create custom spelling lists</Text>
 
           {generalError && (
@@ -154,7 +154,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3E5F5',
   },
   flex: {
     flex: 1,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#333',
+    color: '#4A148C',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -178,8 +178,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   errorBanner: {
-    backgroundColor: '#FFEBEE',
-    borderRadius: 8,
+    backgroundColor: '#FFCDD2',
+    borderRadius: 12,
     padding: 12,
     marginBottom: 16,
   },
@@ -194,32 +194,38 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#555',
+    color: '#4A148C',
     marginBottom: 6,
   },
   input: {
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderWidth: 2,
+    borderColor: '#CE93D8',
+    borderRadius: 12,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
   },
   inputError: {
-    borderColor: '#E53935',
+    borderColor: '#FF5252',
   },
   errorText: {
-    color: '#E53935',
+    color: '#FF5252',
     fontSize: 13,
     marginTop: 4,
   },
   button: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    minHeight: 48,
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -227,7 +233,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   linkContainer: {
     alignItems: 'center',
@@ -239,7 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkBold: {
-    color: '#2196F3',
+    color: '#7C4DFF',
     fontWeight: '600',
   },
 });

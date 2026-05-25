@@ -10,6 +10,20 @@ import { useRouter } from 'expo-router';
 import { useTestSession, buildResult } from '../../src/contexts/TestSessionContext';
 import { TestSession } from '../../src/types';
 
+function getScoreEmoji(percentage: number): string {
+  if (percentage === 100) return '🏆';
+  if (percentage >= 80) return '🌟';
+  if (percentage >= 50) return '👍';
+  return '💪';
+}
+
+function getScoreMessage(percentage: number): string {
+  if (percentage === 100) return 'Perfect score!';
+  if (percentage >= 80) return 'Great job!';
+  if (percentage >= 50) return 'Good effort!';
+  return 'Keep practising!';
+}
+
 export default function ResultsScreen() {
   const router = useRouter();
   const { wordList, answers, inputMode, initSession } = useTestSession();
@@ -41,6 +55,8 @@ export default function ResultsScreen() {
   };
 
   const result = buildResult(session, wordList);
+  const emoji = getScoreEmoji(result.percentageCorrect);
+  const message = getScoreMessage(result.percentageCorrect);
 
   const handleRetake = () => {
     initSession(wordList, inputMode);
@@ -57,7 +73,7 @@ export default function ResultsScreen() {
       contentContainerStyle={styles.contentContainer}
       testID="results-screen"
     >
-      <Text style={styles.title}>Test Results</Text>
+      <Text style={styles.title}>{emoji} {message}</Text>
 
       <View style={styles.percentageContainer} testID="percentage-container">
         <Text style={styles.percentageText} testID="percentage-text">
@@ -79,7 +95,9 @@ export default function ResultsScreen() {
             testID={`word-row-${index}`}
           >
             <View style={styles.wordInfo}>
-              <Text style={styles.wordText}>{record.word}</Text>
+              <Text style={styles.wordText}>
+                {record.correct ? '✅' : '❌'} {record.word}
+              </Text>
               <Text
                 style={[
                   styles.labelText,
@@ -112,7 +130,7 @@ export default function ResultsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Retake test"
         >
-          <Text style={styles.retakeButtonText}>Retake</Text>
+          <Text style={styles.retakeButtonText}>🔄 Retake</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -122,7 +140,7 @@ export default function ResultsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go to home screen"
         >
-          <Text style={styles.homeButtonText}>Home</Text>
+          <Text style={styles.homeButtonText}>🏠 Home</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -132,7 +150,7 @@ export default function ResultsScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F3E5F5',
   },
   contentContainer: {
     padding: 24,
@@ -143,26 +161,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: '#F3E5F5',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#333',
+    color: '#4A148C',
     marginBottom: 24,
+    textAlign: 'center',
   },
   percentageContainer: {
     alignItems: 'center',
     marginBottom: 32,
     padding: 24,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#fff',
     borderRadius: 16,
     width: '100%',
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   percentageText: {
-    fontSize: 48,
+    fontSize: 56,
     fontWeight: '700',
-    color: '#4A90D9',
+    color: '#7C4DFF',
   },
   percentageLabel: {
     fontSize: 16,
@@ -175,14 +199,14 @@ const styles = StyleSheet.create({
   },
   wordRow: {
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 8,
   },
   correctRow: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#C8E6C9',
   },
   incorrectRow: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FFCDD2',
   },
   wordInfo: {
     flexDirection: 'row',
@@ -224,28 +248,35 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   retakeButton: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
+    minHeight: 48,
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   retakeButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   homeButton: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DDD',
+    borderWidth: 2,
+    borderColor: '#CE93D8',
+    minHeight: 48,
   },
   homeButtonText: {
-    color: '#333',
+    color: '#4A148C',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   noDataText: {
     fontSize: 16,

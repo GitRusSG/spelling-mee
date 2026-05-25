@@ -10,11 +10,7 @@ interface AudioButtonProps {
 
 /**
  * Play/repeat button for audio pronunciation with loading and error states.
- *
- * - idle: Shows a play icon/label, ready to be pressed.
- * - loading: Shows a spinner; button is disabled.
- * - playing: Shows a playing indicator; button is disabled.
- * - error: Shows an inline error indicator with retry affordance.
+ * Kid-friendly design with bigger size, purple background, and friendly messages.
  */
 export default function AudioButton({ onPress, state }: AudioButtonProps) {
   const isDisabled = state === 'loading' || state === 'playing';
@@ -38,7 +34,7 @@ export default function AudioButton({ onPress, state }: AudioButtonProps) {
       {state === 'idle' && (
         <View style={styles.content}>
           <Text style={styles.icon}>🔊</Text>
-          <Text style={styles.label}>Play</Text>
+          <Text style={styles.label}>Hear the word!</Text>
         </View>
       )}
       {state === 'playing' && (
@@ -49,8 +45,8 @@ export default function AudioButton({ onPress, state }: AudioButtonProps) {
       )}
       {state === 'error' && (
         <View style={styles.content}>
-          <Text style={styles.errorIcon} testID="audio-button-error-indicator">⚠️</Text>
-          <Text style={styles.errorLabel}>Retry</Text>
+          <Text style={styles.errorIcon} testID="audio-button-error-indicator">😕</Text>
+          <Text style={styles.errorLabel}>Oops! Try again</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -72,36 +68,42 @@ function getAccessibilityLabel(state: AudioButtonState): string {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#4A90D9',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 120,
+    minWidth: 180,
+    minHeight: 56,
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   errorButton: {
-    backgroundColor: '#D94A4A',
+    backgroundColor: '#FF5252',
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   icon: {
-    fontSize: 18,
+    fontSize: 24,
   },
   label: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   errorIcon: {
-    fontSize: 18,
+    fontSize: 24,
   },
   errorLabel: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

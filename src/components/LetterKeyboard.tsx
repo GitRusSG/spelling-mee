@@ -8,21 +8,30 @@ interface LetterKeyboardProps {
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+const PASTEL_COLORS = [
+  '#E8D5F5', // lavender
+  '#D5F5E3', // mint
+  '#FDE9D9', // peach
+  '#D5EEF5', // sky
+  '#F5D5E8', // pink
+  '#F5F0D5', // cream
+];
+
 /**
  * Alphabet keyboard for letter-by-letter spelling mode.
- *
- * Renders 26 letter buttons (A–Z) plus a backspace button.
- * Each letter button fires `onLetterPress` with the tapped letter.
- * The backspace button fires `onBackspace` to delete the last entered letter.
+ * Kid-friendly with colorful pastel buttons and bigger touch targets.
  */
 export default function LetterKeyboard({ onLetterPress, onBackspace }: LetterKeyboardProps) {
   return (
     <View style={styles.container} testID="letter-keyboard">
       <View style={styles.lettersGrid}>
-        {LETTERS.map((letter) => (
+        {LETTERS.map((letter, index) => (
           <TouchableOpacity
             key={letter}
-            style={styles.letterButton}
+            style={[
+              styles.letterButton,
+              { backgroundColor: PASTEL_COLORS[index % PASTEL_COLORS.length] },
+            ]}
             onPress={() => onLetterPress(letter)}
             accessibilityRole="button"
             accessibilityLabel={letter}
@@ -39,7 +48,7 @@ export default function LetterKeyboard({ onLetterPress, onBackspace }: LetterKey
         accessibilityLabel="Backspace"
         testID="backspace-button"
       >
-        <Text style={styles.backspaceText}>⌫ Backspace</Text>
+        <Text style={styles.backspaceText}>⬅️ Backspace</Text>
       </TouchableOpacity>
     </View>
   );
@@ -56,31 +65,36 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   letterButton: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 6,
-    width: 44,
-    height: 44,
+    borderRadius: 12,
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   letterText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4A148C',
   },
   backspaceButton: {
-    backgroundColor: '#E0E0E0',
-    borderRadius: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    backgroundColor: '#FF6D00',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 12,
     alignSelf: 'center',
+    minHeight: 48,
   },
   backspaceText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: '#fff',
   },
 });
