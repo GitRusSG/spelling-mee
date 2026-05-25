@@ -152,7 +152,8 @@ export default function TestScreen() {
   if (!sessionWordList) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <InterstitialAd visible={showAd} onClose={handleAdClose} />
+        {!showAd && <Text style={styles.loadingText}>Loading...</Text>}
       </View>
     );
   }

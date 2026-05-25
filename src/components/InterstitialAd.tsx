@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 
 interface InterstitialAdProps {
   visible: boolean;
@@ -40,19 +40,13 @@ export default function InterstitialAd({ visible, onClose }: InterstitialAdProps
   if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-    >
-      <View style={styles.overlay}>
-        {/* Ad label in top-left corner */}
-        <View style={styles.adLabelContainer}>
-          <Text style={styles.adLabelText}>Ad</Text>
-        </View>
+    <View style={styles.overlay}>
+      {/* Ad label in top-left corner */}
+      <View style={styles.adLabelContainer}>
+        <Text style={styles.adLabelText}>Ad</Text>
+      </View>
 
-        {/* Countdown or close button in top-right corner */}
+      {/* Countdown or close button in top-right corner */}
         <View style={styles.topRight}>
           {canClose ? (
             <TouchableOpacity
@@ -97,16 +91,21 @@ export default function InterstitialAd({ visible, onClose }: InterstitialAdProps
           </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 9999,
   },
   adLabelContainer: {
     position: 'absolute',
