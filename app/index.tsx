@@ -10,20 +10,56 @@ import {
 import { useRouter } from 'expo-router';
 import { useWordList } from '../src/contexts/WordListContext';
 import { useSubscription } from '../src/contexts/SubscriptionContext';
+import { useAuth } from '../src/contexts/AuthContext';
 import WordListCard from '../src/components/WordListCard';
 
 export default function HomeScreen() {
   const { lists } = useWordList();
   const { isSubscribed } = useSubscription();
+  const { isAuthenticated, user, signOut } = useAuth();
   const router = useRouter();
 
   const builtinLists = lists.filter((list) => list.type === 'builtin');
   const customLists = lists.filter((list) => list.type === 'custom');
 
+  const handleCreateList = () => {
+    if (isAuthenticated) {
+      router.push('/list/create');
+    } else {
+      router.push('/auth/login');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Spelling Mee</Text>
+
+        {/* Auth Status */}
+        <View style={styles.authRow}>
+          {isAuthenticated ? (
+            <View style={styles.authInfo}>
+              <Text style={styles.authEmail} numberOfLines={1}>{user?.email}</Text>
+              <TouchableOpacity
+                onPress={signOut}
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
+                testID="sign-out-button"
+              >
+                <Text style={styles.signOutText}>Sign out</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={() => router.push('/auth/login')}
+              accessibilityRole="link"
+              accessibilityLabel="Sign in"
+              testID="sign-in-link"
+            >
+              <Text style={styles.signInText}>Sign in</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Built-in Lists Section */}
         <View style={styles.section}>
@@ -58,7 +94,7 @@ export default function HomeScreen() {
         {/* Create New List Button */}
         <TouchableOpacity
           style={styles.createButton}
-          onPress={() => router.push('/list/create')}
+          onPress={handleCreateList}
           accessibilityRole="button"
           accessibilityLabel="Create new list"
           testID="create-list-button"
@@ -99,8 +135,32 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 24,
+    marginBottom: 12,
     textAlign: 'center',
+  },
+  authRow: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  authInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  authEmail: {
+    fontSize: 13,
+    color: '#555',
+    maxWidth: 200,
+  },
+  signOutText: {
+    fontSize: 13,
+    color: '#E53935',
+    fontWeight: '500',
+  },
+  signInText: {
+    fontSize: 14,
+    color: '#2196F3',
+    fontWeight: '500',
   },
   section: {
     marginBottom: 24,

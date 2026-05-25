@@ -65,6 +65,17 @@ jest.mock('../../src/contexts/SubscriptionContext', () => ({
   }),
 }));
 
+jest.mock('../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { email: 'test@example.com' },
+    isAuthenticated: true,
+    isLoading: false,
+    signUp: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+  }),
+}));
+
 jest.mock('react-native-google-mobile-ads', () => ({
   BannerAd: 'BannerAd',
   BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: 'ANCHORED_ADAPTIVE_BANNER' },
