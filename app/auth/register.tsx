@@ -69,19 +69,27 @@ export default function RegisterScreen() {
     try {
       const user = await signUp(email.trim(), password);
 
-      // Create user profile in Firestore
-      const displayName = email.trim().split('@')[0];
-      await createProfile(user.uid, { email: email.trim(), displayName });
+      // Navigate to home immediately — user is now authenticated
+      router.replace('/');
 
-      // Trigger local list migration for any existing custom lists
-      const localCustomLists = lists.filter(
-        (l): l is CustomWordList => l.type === 'custom' && !l.creatorUid
-      );
-      if (localCustomLists.length > 0) {
-        migrateLocalLists(localCustomLists);
+      // Best-effort: create profile and migrate lists (don't block navigation)
+      try {
+        const displayName = email.trim().split('@')[0];
+        await createProfile(user.uid, { email: email.trim(), displayName });
+      } catch {
+        // Profile creation failed — not critical, can be retried later
       }
 
-      router.replace('/');
+      try {
+        const localCustomLists = lists.filter(
+          (l): l is CustomWordList => l.type === 'custom' && !l.creatorUid
+        );
+        if (localCustomLists.length > 0) {
+          migrateLocalLists(localCustomLists);
+        }
+      } catch {
+        // Migration failed — not critical
+      }
     } catch (error: any) {
       const code = error?.code ?? '';
       if (code === 'auth/email-already-in-use') {
