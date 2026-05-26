@@ -76,6 +76,7 @@ export default function TestScreen() {
   const [letterSequence, setLetterSequence] = useState('');
   const [isDictating, setIsDictating] = useState(false);
   const [dictationFeedback, setDictationFeedback] = useState<string | null>(null);
+  const [dictationOptions, setDictationOptions] = useState<string[] | null>(null);
   const dictationFeedbackOpacity = useRef(new Animated.Value(0)).current;
   const recognitionRef = useRef<any>(null);
   const [showAd, setShowAd] = useState(() => shouldShowAd(subscriptionStatus));
@@ -259,18 +260,46 @@ export default function TestScreen() {
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 5;
     recognition.continuous = false;
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      const letter = mapSpokenToLetter(transcript);
+      // Gather all alternatives
+      const alternatives: string[] = [];
+      for (let i = 0; i < event.results[0].length; i++) {
+        alternatives.push(event.results[0][i].transcript.trim().toLowerCase());
+      }
 
-      if (letter) {
-        setLetterSequence((prev) => prev + letter.toLowerCase());
-        showDictationFeedback(`Heard "${transcript}" → ${letter} ✓`);
+      // Try to match each alternative to a letter
+      const matchedLetters: string[] = [];
+      for (const alt of alternatives) {
+        const letter = mapSpokenToLetter(alt);
+        if (letter && !matchedLetters.includes(letter)) {
+          matchedLetters.push(letter);
+        }
+      }
+
+      if (matchedLetters.length === 1) {
+        // Clear match — auto-add
+        setLetterSequence((prev) => prev + matchedLetters[0].toLowerCase());
+        showDictationFeedback(`${matchedLetters[0]} ✓`);
+        setDictationOptions(null);
+      } else if (matchedLetters.length > 1) {
+        // Ambiguous — show options for the child to pick
+        setDictationOptions(matchedLetters.slice(0, 4));
+        showDictationFeedback('Which letter did you mean?');
       } else {
-        showDictationFeedback(`Heard "${transcript}" — say a letter!`);
+        // No match at all — show first character fallback
+        const firstAlt = alternatives[0] || '';
+        if (firstAlt.length > 0 && /^[a-z]/.test(firstAlt)) {
+          const fallback = firstAlt[0].toUpperCase();
+          setLetterSequence((prev) => prev + fallback.toLowerCase());
+          showDictationFeedback(`${fallback} ✓`);
+          setDictationOptions(null);
+        } else {
+          showDictationFeedback("Say a letter clearly!");
+          setDictationOptions(null);
+        }
       }
     };
 
@@ -698,6 +727,44 @@ export default function TestScreen() {
               </Animated.View>
             )}
 
+            {/* Dictation options — when ambiguous, show letter choices */}
+            {dictationOptions && (
+              <View style={styles.dictationOptionsContainer} testID="dictation-options">
+                <Text style={styles.dictationOptionsLabel}>Did you mean:</Text>
+                <View style={styles.dictationOptionsRow}>
+                  {dictationOptions.map((letter) => (
+                    <TouchableOpacity
+                      key={letter}
+                      style={styles.dictationOptionButton}
+                      onPress={() => {
+                        setLetterSequence((prev) => prev + letter.toLowerCase());
+                        setDictationOptions(null);
+                        showDictationFeedback(`${letter} ✓`);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select letter ${letter}`}
+                      testID={`dictation-option-${letter}`}
+                    >
+                      <Text style={styles.dictationOptionText}>{letter}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Backspace button */}
+            {letterSequence.length > 0 && (
+              <TouchableOpacity
+                style={styles.backspaceButton}
+                onPress={() => setLetterSequence((prev) => prev.slice(0, -1))}
+                accessibilityRole="button"
+                accessibilityLabel="Delete last letter"
+                testID="backspace-button"
+              >
+                <Text style={styles.backspaceButtonText}>⬅️ Backspace</Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               style={[
                 styles.submitButton,
@@ -956,5 +1023,58 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2E7D32',
     textAlign: 'center',
+  },
+  dictationOptionsContainer: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+    width: '100%',
+    borderWidth: 2,
+    borderColor: '#FF6D00',
+  },
+  dictationOptionsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E65100',
+    marginBottom: 8,
+  },
+  dictationOptionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  dictationOptionButton: {
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  dictationOptionText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  backspaceButton: {
+    backgroundColor: '#FF6D00',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    minHeight: 44,
+    alignItems: 'center',
+  },
+  backspaceButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
