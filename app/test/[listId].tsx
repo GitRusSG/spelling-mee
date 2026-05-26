@@ -487,6 +487,14 @@ export default function TestScreen() {
       // Update total correct and show encouragement every 3rd correct
       const newTotalCorrect = totalCorrect + 1;
       setTotalCorrect(newTotalCorrect);
+
+      // Award honey for correct answers
+      try {
+        const storage = require('../../src/services/storage').createStorage();
+        const currentHoney = parseInt(storage.getString('total_honey') || '0', 10);
+        storage.set('total_honey', String(currentHoney + 1));
+      } catch {}
+
       if (newTotalCorrect % 3 === 0) {
         const randomMsg = ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
         showEncouragement(randomMsg);
