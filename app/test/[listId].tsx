@@ -463,11 +463,28 @@ export default function TestScreen() {
           </>
         ) : (
           <>
+            <Text style={styles.dictationInstruction}>
+              Spell it out, one letter at a time
+            </Text>
+
             <View style={styles.letterDisplay} testID="letter-display">
               <Text style={styles.letterDisplayText} testID="letter-display-text">
                 {letterSequence || ' '}
               </Text>
             </View>
+
+            {/* Dictate button — speak letters */}
+            <TouchableOpacity
+              style={styles.dictateButton}
+              onPress={() => {/* Voice dictation — to be implemented */}}
+              accessibilityRole="button"
+              accessibilityLabel="Dictate letters by speaking"
+              testID="dictate-button"
+            >
+              <Text style={styles.dictateButtonText}>🎤 Dictate</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.orText}>or tap the letters below</Text>
 
             <LetterKeyboard
               onLetterPress={handleLetterPress}
@@ -653,6 +670,39 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 4,
     color: '#4A148C',
+  },
+  dictationInstruction: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A148C',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  dictateButton: {
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginBottom: 8,
+    minHeight: 48,
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dictateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  orText: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontStyle: 'italic',
   },
   streakContainer: {
     backgroundColor: '#FFF3E0',
