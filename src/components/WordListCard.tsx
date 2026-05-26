@@ -47,7 +47,7 @@ export default function WordListCard({ list, onPress }: WordListCardProps) {
           </Text>
           {bestStars > 0 && (
             <Text style={styles.bestStars} testID="word-list-card-stars">
-              {'⭐'.repeat(bestStars)}{'☆'.repeat(3 - bestStars)}
+              {'🍯'.repeat(bestStars)}{'🫙'.repeat(3 - bestStars)}
             </Text>
           )}
         </View>

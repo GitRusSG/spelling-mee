@@ -21,10 +21,10 @@ function getScoreEmoji(percentage: number): string {
 }
 
 function getScoreMessage(percentage: number): string {
-  if (percentage === 100) return 'Perfect score!';
-  if (percentage >= 80) return 'Amazing job! 🎉';
-  if (percentage >= 50) return 'Good effort!';
-  return 'Great effort! Keep practising! 💪';
+  if (percentage === 100) return 'Perfect score! Maximum honey! 🍯';
+  if (percentage >= 80) return 'Amazing job! So much honey! 🍯';
+  if (percentage >= 50) return 'Good effort! Keep collecting honey!';
+  return 'Great effort! Keep practising for more honey! 💪';
 }
 
 export function getStarRating(percentage: number): number {
@@ -153,7 +153,7 @@ export default function ResultsScreen() {
 
       <Text style={styles.title}>{emoji} {message}</Text>
 
-      {/* Star Rating */}
+      {/* Honey Rating */}
       <View style={styles.starContainer} testID="star-rating">
         {[0, 1, 2].map((index) => (
           <Animated.Text
@@ -168,7 +168,7 @@ export default function ResultsScreen() {
             ]}
             testID={`star-${index}`}
           >
-            {index < stars ? '⭐' : '☆'}
+            {index < stars ? '🍯' : '🫙'}
           </Animated.Text>
         ))}
       </View>
@@ -186,7 +186,7 @@ export default function ResultsScreen() {
       {highestStreak >= 2 && (
         <View style={styles.streakResultContainer} testID="results-streak">
           <Text style={styles.streakResultText}>
-            🔥 Best streak: {highestStreak} in a row!
+            🍯 Best honey streak: {highestStreak} in a row!
           </Text>
         </View>
       )}

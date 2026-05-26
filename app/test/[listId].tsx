@@ -580,7 +580,7 @@ export default function TestScreen() {
           ]}
           testID="streak-counter"
         >
-          <Text style={styles.streakText}>🔥 {streak} in a row!</Text>
+          <Text style={styles.streakText}>🍯 {streak} honey streak!</Text>
         </Animated.View>
       )}
 
@@ -983,18 +983,18 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   streakContainer: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#FFF8E1',
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 16,
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: '#FF6D00',
+    borderColor: '#FFC107',
   },
   streakText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#E65100',
+    color: '#F57F17',
     textAlign: 'center',
   },
   encouragementContainer: {
