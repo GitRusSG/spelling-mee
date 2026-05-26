@@ -683,8 +683,16 @@ export default function TestScreen() {
           >
             {feedback.correct
               ? '🎉 Awesome!'
-              : `Almost! The word is "${feedback.word}" 😅`}
+              : `Almost! 😅`}
           </Text>
+          {!feedback.correct && (
+            <View style={styles.comparisonContainer}>
+              <Text style={styles.comparisonLabel}>You typed:</Text>
+              <Text style={styles.comparisonWrong}>{feedback.given || '(empty)'}</Text>
+              <Text style={styles.comparisonLabel}>Correct spelling:</Text>
+              <Text style={styles.comparisonCorrect}>{feedback.word}</Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -941,6 +949,32 @@ const styles = StyleSheet.create({
   },
   incorrectText: {
     color: '#C62828',
+  },
+  comparisonContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+    alignItems: 'center',
+  },
+  comparisonLabel: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 2,
+  },
+  comparisonWrong: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#C62828',
+    textDecorationLine: 'line-through',
+    marginBottom: 10,
+    letterSpacing: 2,
+  },
+  comparisonCorrect: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#2E7D32',
+    letterSpacing: 2,
   },
   errorText: {
     fontSize: 16,
