@@ -64,7 +64,7 @@ async function playWithVoiceProfile(word: string, profile: VoiceProfile): Promis
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-GB';
       utterance.rate = profile.speed * 0.85; // Slightly slower for clarity
-      utterance.pitch = 1.0;
+      utterance.pitch = profile.pitch ?? 1.0;
 
       const voices = window.speechSynthesis.getVoices();
       // Try exact match first, then fall back to Google voices
@@ -87,6 +87,7 @@ async function playWithVoiceProfile(word: string, profile: VoiceProfile): Promis
       language: 'en-GB',
       voice: profile.voiceId,
       rate: profile.speed,
+      pitch: profile.pitch ?? 1.0,
       onDone: resolve,
       onError: (error: any) => reject(error),
     });

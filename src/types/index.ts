@@ -67,6 +67,7 @@ export interface VoiceProfile {
   voiceId: string;       // Selected voice identifier
   speed: number;         // 0.5 – 1.5
   label: string;         // Display name for the profile
+  pitch?: number;        // Optional pitch override (0.1 – 2.0, default 1.0)
 }
 
 export interface VoiceOption {

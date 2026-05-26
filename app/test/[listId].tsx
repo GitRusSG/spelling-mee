@@ -25,6 +25,7 @@ import LetterKeyboard from '../../src/components/LetterKeyboard';
 import InterstitialAd from '../../src/components/InterstitialAd';
 import ConfettiAnimation from '../../src/components/ConfettiAnimation';
 import { InputMode } from '../../src/types';
+import { playCorrectSound, playIncorrectSound, playStreakSound, playButtonClickSound } from '../../src/utils/soundEffects';
 
 const ENCOURAGEMENT_MESSAGES = [
   "You're on fire! 🔥",
@@ -489,6 +490,8 @@ export default function TestScreen() {
 
     // Gamification: confetti, streak, encouragement
     if (isCorrect) {
+      playCorrectSound();
+
       // Trigger confetti
       setConfettiTrigger(false);
       setTimeout(() => setConfettiTrigger(true), 10);
@@ -499,6 +502,7 @@ export default function TestScreen() {
 
       // Check for streak milestones (3, 5, 10)
       if (newStreak === 3 || newStreak === 5 || newStreak === 10) {
+        playStreakSound();
         animateStreakGlow();
       }
 
@@ -518,6 +522,7 @@ export default function TestScreen() {
         showEncouragement(randomMsg);
       }
     } else {
+      playIncorrectSound();
       // Reset streak on incorrect
       setStreak(0);
       // Show gentle encouragement on incorrect
@@ -533,6 +538,7 @@ export default function TestScreen() {
 
   const handleContinue = useCallback(() => {
     if (!sessionWordList) return;
+    playButtonClickSound();
     setFeedback(null);
     setConfettiTrigger(false);
     const nextIndex = currentIndex;
