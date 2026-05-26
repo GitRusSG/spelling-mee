@@ -24,9 +24,9 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    blitz: false,
-    grades: false,
-    other: false,
+    blitz: true,
+    grades: true,
+    other: true,
   });
   const [expandedGrades, setExpandedGrades] = useState<Record<string, boolean>>({});
 

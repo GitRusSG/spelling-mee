@@ -22,6 +22,7 @@ import { shouldShowAd } from '../../src/services/AdService';
 import ProgressIndicator from '../../src/components/ProgressIndicator';
 import AudioButton from '../../src/components/AudioButton';
 import LetterKeyboard from '../../src/components/LetterKeyboard';
+import QwertyKeyboard from '../../src/components/QwertyKeyboard';
 import InterstitialAd from '../../src/components/InterstitialAd';
 import ConfettiAnimation from '../../src/components/ConfettiAnimation';
 import { InputMode } from '../../src/types';
@@ -211,13 +212,19 @@ export default function TestScreen() {
     // Fallback: if the speech result starts with a single letter followed by common suffixes, extract it
     const firstLetterMatch = cleaned.match(/^([a-z])\s/);
     if (firstLetterMatch) {
-      // Check if the first character matches a letter in the spoken map values
-      const firstChar = firstLetterMatch[1].toUpperCase();
-      const mapValues = Object.values(spokenMap);
-      if (mapValues.includes(firstChar)) {
-        return firstChar;
+      return firstLetterMatch[1].toUpperCase();
+    }
+
+    // Phonetic ending match — if it ends like a letter name, use that
+    const endingMap: Record<string, string> = {
+      'ee': 'E', 'ey': 'A', 'ay': 'A', 'ar': 'R', 'oh': 'O',
+      'oo': 'U', 'ew': 'U', 'ex': 'X', 'em': 'M', 'en': 'N',
+      'el': 'L', 'es': 'S',
+    };
+    for (const [ending, letter] of Object.entries(endingMap)) {
+      if (cleaned.endsWith(ending) && cleaned.length <= 4) {
+        return letter;
       }
-      return firstChar;
     }
 
     // Last resort: just take the first character if it's a letter
@@ -708,35 +715,18 @@ export default function TestScreen() {
 
         {inputMode === 'text' ? (
           <>
-            <TextInput
-              style={styles.textInput}
-              value={answer}
-              onChangeText={setAnswer}
-              placeholder="Type your answer..."
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              autoComplete="off"
-              testID="answer-input"
-              accessibilityLabel="Type your spelling answer"
-              editable={status === 'active' && !feedback}
-              onSubmitEditing={() => { if (answer.trim() && !feedback) handleSubmit(); }}
-              returnKeyType="done"
-            />
+            <View style={styles.letterDisplay} testID="answer-display">
+              <Text style={styles.letterDisplayText} testID="answer-display-text">
+                {answer || ' '}
+              </Text>
+            </View>
 
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                (!answer.trim() || !!feedback) && styles.submitButtonDisabled,
-              ]}
-              onPress={handleSubmit}
-              disabled={!answer.trim() || !!feedback}
-              testID="submit-button"
-              accessibilityRole="button"
-              accessibilityLabel="Submit answer"
-            >
-              <Text style={styles.submitButtonText}>Submit ✨</Text>
-            </TouchableOpacity>
+            <QwertyKeyboard
+              onKeyPress={(key) => setAnswer((prev) => prev + key)}
+              onBackspace={() => setAnswer((prev) => prev.slice(0, -1))}
+              onSubmit={handleSubmit}
+              submitDisabled={!answer.trim() || !!feedback}
+            />
           </>
         ) : (
           <>
