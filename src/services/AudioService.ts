@@ -1,28 +1,41 @@
 import { Platform } from 'react-native';
 import { AudioUnavailableError } from '../types/errors';
+import type { PlayWordOptions, VoiceProfile } from '../types/index';
+
+// ─── Audio Source Resolution (Pure Function) ─────────────────────────────────
+
+export interface AudioSourceConfig {
+  hasDictation: boolean;
+  dictationFailed: boolean;
+  hasVoiceProfile: boolean;
+  voiceProfileFailed: boolean;
+}
+
+export type AudioSourceType = 'dictation' | 'voice-profile' | 'default';
 
 /**
- * Attempts to play a pre-recorded MP3 asset for the given word.
- * Uses a static asset map — words without a pre-recorded file throw immediately.
+ * Pure function that determines which audio source to use based on availability
+ * and failure state. Follows priority: dictation > voice-profile > default.
  */
-async function playWithAsset(word: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    throw new Error('No audio assets on web');
+export function resolveAudioSource(config: AudioSourceConfig): AudioSourceType {
+  if (config.hasDictation && !config.dictationFailed) {
+    return 'dictation';
   }
+  if (config.hasVoiceProfile && !config.voiceProfileFailed) {
+    return 'voice-profile';
+  }
+  return 'default';
+}
 
+// ─── Internal Playback Helpers ───────────────────────────────────────────────
+
+/**
+ * Plays a dictation recording from a remote URL using expo-audio player.
+ */
+async function playDictation(url: string): Promise<void> {
   const { createAudioPlayer } = require('expo-audio');
 
-  // Static asset map: add entries here as audio files are added to assets/audio/
-  const assetMap: Record<string, ReturnType<typeof require>> = {
-    // e.g. accommodate: require('../../assets/audio/accommodate.mp3'),
-  };
-
-  const source = assetMap[word.toLowerCase()];
-  if (source === undefined) {
-    throw new Error(`No audio asset for word: ${word}`);
-  }
-
-  const player = createAudioPlayer(source);
+  const player = createAudioPlayer({ uri: url });
   await new Promise<void>((resolve, reject) => {
     const subscription = player.addListener('playbackStatusUpdate', (status: any) => {
       if (status.didJustFinish) {
@@ -39,10 +52,48 @@ async function playWithAsset(word: string): Promise<void> {
 }
 
 /**
- * Falls back to text-to-speech using British English.
- * On web, uses the Web Speech API with the best available en-GB voice.
+ * Plays a word using TTS with a specific voice profile (voiceId and speed).
  */
-async function playWithTTS(word: string): Promise<void> {
+async function playWithVoiceProfile(word: string, profile: VoiceProfile): Promise<void> {
+  if (Platform.OS === 'web') {
+    return new Promise<void>((resolve, reject) => {
+      if (!('speechSynthesis' in window)) {
+        reject(new Error('Web Speech API not supported'));
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'en-GB';
+      utterance.rate = profile.speed;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const selectedVoice = voices.find(v => v.voiceURI === profile.voiceId);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+
+      utterance.onend = () => resolve();
+      utterance.onerror = (e) => reject(e);
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+  const Speech = require('expo-speech');
+  return new Promise<void>((resolve, reject) => {
+    Speech.speak(word, {
+      language: 'en-GB',
+      voice: profile.voiceId,
+      rate: profile.speed,
+      onDone: resolve,
+      onError: (error: any) => reject(error),
+    });
+  });
+}
+
+/**
+ * Falls back to default text-to-speech using British English female voice.
+ */
+async function playWithDefaultTTS(word: string): Promise<void> {
   if (Platform.OS === 'web') {
     return new Promise<void>((resolve, reject) => {
       if (!('speechSynthesis' in window)) {
@@ -54,7 +105,6 @@ async function playWithTTS(word: string): Promise<void> {
       utterance.rate = 0.85;
       utterance.pitch = 1.0;
 
-      // Try to find a high-quality en-GB voice
       const voices = window.speechSynthesis.getVoices();
       const enGBVoice = voices.find(v => v.lang === 'en-GB' && v.name.includes('Female'))
         || voices.find(v => v.lang === 'en-GB')
@@ -79,26 +129,52 @@ async function playWithTTS(word: string): Promise<void> {
   });
 }
 
+// ─── Public AudioService ─────────────────────────────────────────────────────
+
+export interface PlayWordResult {
+  sourceUsed: AudioSourceType;
+}
+
 export const AudioService = {
   /**
-   * Plays the pronunciation of a word.
-   * 1. Tries a pre-recorded asset from assets/audio/{word}.mp3
-   * 2. Falls back to expo-speech TTS with en-GB locale
-   * 3. Throws AudioUnavailableError if both fail
+   * Plays the pronunciation of a word following the audio source priority:
+   * 1. Dictation recording (if dictationUrl provided)
+   * 2. TTS with voice profile (if voiceProfile provided)
+   * 3. Default TTS (en-GB female)
+   *
+   * Falls back through the chain on failure at each level.
+   * Throws AudioUnavailableError if all sources fail.
    */
-  async playWord(word: string): Promise<void> {
-    try {
-      await playWithAsset(word);
-      return;
-    } catch {
-      // Asset not available — fall through to TTS
+  async playWord(word: string, options?: PlayWordOptions): Promise<PlayWordResult> {
+    const dictationUrl = options?.dictationUrl;
+    const voiceProfile = options?.voiceProfile;
+
+    // Try dictation recording first
+    if (dictationUrl) {
+      try {
+        await playDictation(dictationUrl);
+        return { sourceUsed: 'dictation' };
+      } catch {
+        // Dictation failed — fall through to voice profile
+      }
     }
 
+    // Try TTS with voice profile
+    if (voiceProfile) {
+      try {
+        await playWithVoiceProfile(word, voiceProfile);
+        return { sourceUsed: 'voice-profile' };
+      } catch {
+        // Voice profile TTS failed — fall through to default
+      }
+    }
+
+    // Try default TTS
     try {
-      await playWithTTS(word);
-      return;
+      await playWithDefaultTTS(word);
+      return { sourceUsed: 'default' };
     } catch {
-      // TTS also failed
+      // All sources failed
     }
 
     throw new AudioUnavailableError(word, 'tts-failed');

@@ -24,3 +24,37 @@ export class PurchaseError extends Error {
     Object.setPrototypeOf(this, PurchaseError.prototype);
   }
 }
+
+export class RecordingError extends Error {
+  constructor(
+    public reason: 'permission-denied' | 'hardware-unavailable' | 'duration-exceeded' | 'save-failed',
+    message: string
+  ) {
+    super(message);
+    this.name = 'RecordingError';
+    Object.setPrototypeOf(this, RecordingError.prototype);
+  }
+}
+
+export class DictationStorageError extends Error {
+  constructor(
+    public reason: 'upload-failed' | 'download-failed' | 'not-found',
+    public word: string,
+    message: string
+  ) {
+    super(message);
+    this.name = 'DictationStorageError';
+    Object.setPrototypeOf(this, DictationStorageError.prototype);
+  }
+}
+
+export class CommunityListError extends Error {
+  constructor(
+    public reason: 'publish-failed' | 'fetch-failed' | 'not-found',
+    message: string
+  ) {
+    super(message);
+    this.name = 'CommunityListError';
+    Object.setPrototypeOf(this, CommunityListError.prototype);
+  }
+}

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { validateEmail } from '../../src/utils/validation';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -33,9 +34,12 @@ export default function LoginScreen() {
     if (!email.trim()) {
       setEmailError('Email is required');
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
-      setEmailError('Enter a valid email address');
-      valid = false;
+    } else {
+      const emailResult = validateEmail(email.trim());
+      if (!emailResult.valid) {
+        setEmailError('Enter a valid email address');
+        valid = false;
+      }
     }
 
     if (!password) {

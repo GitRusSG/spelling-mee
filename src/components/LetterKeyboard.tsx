@@ -6,41 +6,46 @@ interface LetterKeyboardProps {
   onBackspace: () => void;
 }
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+// 3-row alphabetical layout for kid-friendly readability
+const ROWS = [
+  'ABCDEFGHI'.split(''),   // Row 1: A-I (9 letters)
+  'JKLMNOPQR'.split(''),   // Row 2: J-R (9 letters)
+  'STUVWXYZ'.split(''),    // Row 3: S-Z (8 letters)
+];
 
-const PASTEL_COLORS = [
-  '#E8D5F5', // lavender
-  '#D5F5E3', // mint
-  '#FDE9D9', // peach
-  '#D5EEF5', // sky
-  '#F5D5E8', // pink
-  '#F5F0D5', // cream
+const ROW_COLORS = [
+  '#E8D5F5', // lavender for row 1
+  '#D5F5E3', // mint for row 2
+  '#FDE9D9', // peach for row 3
 ];
 
 /**
  * Alphabet keyboard for letter-by-letter spelling mode.
- * Kid-friendly with colorful pastel buttons and bigger touch targets.
+ * Kid-friendly with colorful pastel buttons arranged in 3 neat rows.
+ * Designed to work well on both mobile and web.
  */
 export default function LetterKeyboard({ onLetterPress, onBackspace }: LetterKeyboardProps) {
   return (
     <View style={styles.container} testID="letter-keyboard">
-      <View style={styles.lettersGrid}>
-        {LETTERS.map((letter, index) => (
-          <TouchableOpacity
-            key={letter}
-            style={[
-              styles.letterButton,
-              { backgroundColor: PASTEL_COLORS[index % PASTEL_COLORS.length] },
-            ]}
-            onPress={() => onLetterPress(letter)}
-            accessibilityRole="button"
-            accessibilityLabel={letter}
-            testID={`letter-button-${letter}`}
-          >
-            <Text style={styles.letterText}>{letter}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {ROWS.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.row}>
+          {row.map((letter) => (
+            <TouchableOpacity
+              key={letter}
+              style={[
+                styles.letterButton,
+                { backgroundColor: ROW_COLORS[rowIndex] },
+              ]}
+              onPress={() => onLetterPress(letter)}
+              accessibilityRole="button"
+              accessibilityLabel={letter}
+              testID={`letter-button-${letter}`}
+            >
+              <Text style={styles.letterText}>{letter}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ))}
       <TouchableOpacity
         style={styles.backspaceButton}
         onPress={onBackspace}
@@ -57,17 +62,20 @@ export default function LetterKeyboard({ onLetterPress, onBackspace }: LetterKey
 const styles = StyleSheet.create({
   container: {
     padding: 8,
+    width: '100%',
+    maxWidth: 500,
+    alignSelf: 'center',
   },
-  lettersGrid: {
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
+    marginBottom: 8,
     gap: 6,
   },
   letterButton: {
     borderRadius: 12,
-    width: 52,
-    height: 52,
+    width: 46,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -77,7 +85,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   letterText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#4A148C',
   },
@@ -88,7 +96,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 8,
     alignSelf: 'center',
     minHeight: 48,
   },

@@ -39,6 +39,48 @@ jest.mock('../../src/services/AudioService', () => ({
   AudioService: {
     playWord: (...args: any[]) => mockPlayWord(...args),
   },
+  AudioSourceType: {},
+}));
+
+jest.mock('../../src/contexts/SubscriptionContext', () => ({
+  useSubscription: () => ({
+    isSubscribed: false,
+    status: 'none',
+    expiresAt: null,
+    purchase: jest.fn(),
+    restore: jest.fn(),
+  }),
+}));
+
+jest.mock('../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { uid: 'test-user-123' },
+    isAuthenticated: true,
+    isLoading: false,
+    signUp: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+  }),
+}));
+
+jest.mock('../../src/contexts/VoiceProfileContext', () => ({
+  useVoiceProfile: () => ({
+    profile: { voiceId: 'en-GB-female', speed: 1.0, label: 'British Female' },
+    availableVoices: [],
+    isLoading: false,
+    updateProfile: jest.fn(),
+    previewVoice: jest.fn(),
+  }),
+}));
+
+const mockGetDownloadUrl = jest.fn();
+
+jest.mock('../../src/services/DictationStorageService', () => ({
+  getDownloadUrl: (...args: any[]) => mockGetDownloadUrl(...args),
+}));
+
+jest.mock('../../src/services/AdService', () => ({
+  shouldShowAd: () => false,
 }));
 
 jest.mock('../../src/types/errors', () => {
@@ -104,7 +146,8 @@ describe('TestScreen', () => {
       wordCount: 3,
     });
 
-    mockPlayWord.mockResolvedValue(undefined);
+    mockPlayWord.mockResolvedValue({ sourceUsed: 'default' });
+    mockGetDownloadUrl.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -118,7 +161,9 @@ describe('TestScreen', () => {
     render(<TestScreen />);
 
     await waitFor(() => {
-      expect(mockPlayWord).toHaveBeenCalledWith('apple');
+      expect(mockPlayWord).toHaveBeenCalledWith('apple', expect.objectContaining({
+        voiceProfile: { voiceId: 'en-GB-female', speed: 1.0, label: 'British Female' },
+      }));
     });
   });
 
@@ -152,7 +197,7 @@ describe('TestScreen', () => {
     // Feedback should show correct
     await waitFor(() => {
       const feedbackText = getByTestId('feedback-text');
-      expect(feedbackText.props.children).toContain('Correct');
+      expect(feedbackText.props.children).toContain('Awesome');
     });
 
     // submitAnswer should have been called
@@ -175,7 +220,7 @@ describe('TestScreen', () => {
     // Feedback should show incorrect with the correct spelling
     await waitFor(() => {
       const feedbackText = getByTestId('feedback-text');
-      expect(feedbackText.props.children).toContain('Incorrect');
+      expect(feedbackText.props.children).toContain('Almost');
     });
 
     expect(mockSubmitAnswer).toHaveBeenCalledWith('aple');
@@ -215,6 +260,92 @@ describe('TestScreen', () => {
     // Wait for the audio error to be processed
     await waitFor(() => {
       expect(getByTestId('audio-button-error-indicator')).toBeTruthy();
+    });
+  });
+
+  // ─── Requirement 9.4: Audio source indicator ────────────────────────────────
+
+  it('displays audio source indicator showing which source is active', async () => {
+    mockPlayWord.mockResolvedValue({ sourceUsed: 'dictation' });
+
+    const { getByTestId } = render(<TestScreen />);
+
+    await waitFor(() => {
+      const indicator = getByTestId('audio-source-indicator');
+      expect(indicator.props.children).toContain('Parent');
+    });
+  });
+
+  it('displays voice-profile indicator when TTS with profile is used', async () => {
+    mockPlayWord.mockResolvedValue({ sourceUsed: 'voice-profile' });
+
+    const { getByTestId } = render(<TestScreen />);
+
+    await waitFor(() => {
+      const indicator = getByTestId('audio-source-indicator');
+      expect(indicator.props.children).toContain('Custom voice');
+    });
+  });
+
+  // ─── Requirement 9.3: Error + retry when all sources fail ───────────────────
+
+  it('shows error message with retry button when all audio sources fail', async () => {
+    mockPlayWord.mockRejectedValue(
+      new AudioUnavailableError('apple', 'tts-failed')
+    );
+
+    const { getByTestId } = render(<TestScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('audio-error-container')).toBeTruthy();
+      expect(getByTestId('retry-button')).toBeTruthy();
+    });
+  });
+
+  it('retries audio playback when retry button is pressed', async () => {
+    mockPlayWord
+      .mockRejectedValueOnce(new AudioUnavailableError('apple', 'tts-failed'))
+      .mockResolvedValueOnce({ sourceUsed: 'default' });
+
+    const { getByTestId } = render(<TestScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('retry-button')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('retry-button'));
+
+    await waitFor(() => {
+      expect(mockPlayWord).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ─── Requirement 6.4: Fallback notice when dictation fails ──────────────────
+
+  it('shows fallback notice when dictation was available but TTS was used', async () => {
+    mockGetDownloadUrl.mockResolvedValue('https://storage.example.com/dictation.m4a');
+    mockPlayWord.mockResolvedValue({ sourceUsed: 'voice-profile' });
+
+    const { getByTestId } = render(<TestScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('fallback-notice')).toBeTruthy();
+    });
+  });
+
+  // ─── Requirement 6.1: Dictation URL is passed to AudioService ───────────────
+
+  it('passes dictation URL to AudioService when available', async () => {
+    mockGetDownloadUrl.mockResolvedValue('https://storage.example.com/apple.m4a');
+    mockPlayWord.mockResolvedValue({ sourceUsed: 'dictation' });
+
+    render(<TestScreen />);
+
+    await waitFor(() => {
+      expect(mockPlayWord).toHaveBeenCalledWith('apple', expect.objectContaining({
+        dictationUrl: 'https://storage.example.com/apple.m4a',
+        voiceProfile: { voiceId: 'en-GB-female', speed: 1.0, label: 'British Female' },
+      }));
     });
   });
 });

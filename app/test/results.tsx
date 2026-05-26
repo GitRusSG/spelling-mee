@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Text,
   View,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTestSession, buildResult } from '../../src/contexts/TestSessionContext';
 import { TestSession } from '../../src/types';
+import ConfettiAnimation from '../../src/components/ConfettiAnimation';
+import { createStorage } from '../../src/services/storage';
 
 function getScoreEmoji(percentage: number): string {
   if (percentage === 100) return '🏆';
@@ -19,14 +22,28 @@ function getScoreEmoji(percentage: number): string {
 
 function getScoreMessage(percentage: number): string {
   if (percentage === 100) return 'Perfect score!';
-  if (percentage >= 80) return 'Great job!';
+  if (percentage >= 80) return 'Amazing job! 🎉';
   if (percentage >= 50) return 'Good effort!';
-  return 'Keep practising!';
+  return 'Great effort! Keep practising! 💪';
+}
+
+export function getStarRating(percentage: number): number {
+  if (percentage >= 90) return 3;
+  if (percentage >= 70) return 2;
+  if (percentage >= 50) return 1;
+  return 0;
 }
 
 export default function ResultsScreen() {
   const router = useRouter();
   const { wordList, answers, inputMode, initSession } = useTestSession();
+
+  // Star animation values
+  const starScales = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
 
   // If there's no completed session data, show a fallback
   if (!wordList || answers.length === 0) {
@@ -57,6 +74,65 @@ export default function ResultsScreen() {
   const result = buildResult(session, wordList);
   const emoji = getScoreEmoji(result.percentageCorrect);
   const message = getScoreMessage(result.percentageCorrect);
+  const stars = getStarRating(result.percentageCorrect);
+  const showConfetti = result.percentageCorrect >= 80;
+
+  // Calculate highest streak from answers
+  let highestStreak = 0;
+  let currentStreak = 0;
+  for (const ans of answers) {
+    if (ans.correct) {
+      currentStreak++;
+      if (currentStreak > highestStreak) highestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+  }
+
+  // Persist best star rating and highest streak
+  useEffect(() => {
+    try {
+      const storage = createStorage();
+      // Persist best star rating
+      const bestStarsKey = `best_stars_${wordList.id}`;
+      const existingStars = storage.getString(bestStarsKey);
+      const existingStarCount = existingStars ? parseInt(existingStars, 10) : 0;
+      if (stars > existingStarCount) {
+        storage.set(bestStarsKey, String(stars));
+      }
+      // Persist highest streak
+      const bestStreakKey = `best_streak_${wordList.id}`;
+      const existingStreak = storage.getString(bestStreakKey);
+      const existingStreakCount = existingStreak ? parseInt(existingStreak, 10) : 0;
+      if (highestStreak > existingStreakCount) {
+        storage.set(bestStreakKey, String(highestStreak));
+      }
+    } catch {
+      // Storage errors should not break the results screen
+    }
+  }, [wordList.id, stars, highestStreak]);
+
+  // Animate stars appearing
+  useEffect(() => {
+    const animations = starScales.map((scale, index) => {
+      if (index < stars) {
+        return Animated.spring(scale, {
+          toValue: 1,
+          delay: index * 200,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 6,
+        });
+      }
+      return Animated.timing(scale, {
+        toValue: 0.8,
+        duration: 300,
+        delay: index * 200,
+        useNativeDriver: true,
+      });
+    });
+    Animated.parallel(animations).start();
+  }, [stars]);
 
   const handleRetake = () => {
     initSession(wordList, inputMode);
@@ -73,7 +149,29 @@ export default function ResultsScreen() {
       contentContainerStyle={styles.contentContainer}
       testID="results-screen"
     >
+      <ConfettiAnimation trigger={showConfetti} intensity="large" />
+
       <Text style={styles.title}>{emoji} {message}</Text>
+
+      {/* Star Rating */}
+      <View style={styles.starContainer} testID="star-rating">
+        {[0, 1, 2].map((index) => (
+          <Animated.Text
+            key={index}
+            style={[
+              styles.star,
+              {
+                transform: [{ scale: starScales[index] }],
+                opacity: starScales[index],
+              },
+              index >= stars && styles.emptyStar,
+            ]}
+            testID={`star-${index}`}
+          >
+            {index < stars ? '⭐' : '☆'}
+          </Animated.Text>
+        ))}
+      </View>
 
       <View style={styles.percentageContainer} testID="percentage-container">
         <Text style={styles.percentageText} testID="percentage-text">
@@ -83,6 +181,15 @@ export default function ResultsScreen() {
           {result.correctCount} of {result.totalWords} correct
         </Text>
       </View>
+
+      {/* Highest streak display */}
+      {highestStreak >= 2 && (
+        <View style={styles.streakResultContainer} testID="results-streak">
+          <Text style={styles.streakResultText}>
+            🔥 Best streak: {highestStreak} in a row!
+          </Text>
+        </View>
+      )}
 
       <View style={styles.wordListContainer} testID="word-list-container">
         {answers.map((record, index) => (
@@ -282,5 +389,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 24,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  star: {
+    fontSize: 40,
+  },
+  emptyStar: {
+    fontSize: 40,
+    color: '#D1C4E9',
+  },
+  streakResultContainer: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#FF6D00',
+    width: '100%',
+    alignItems: 'center',
+  },
+  streakResultText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#E65100',
   },
 });

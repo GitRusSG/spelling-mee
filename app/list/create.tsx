@@ -12,18 +12,24 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useWordList } from '../../src/contexts/WordListContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 import { validateListName, validateWordList } from '../../src/utils/validation';
 import { ValidationError } from '../../src/types/errors';
+import AuthGate from '../../src/components/AuthGate';
 
-export default function CreateListScreen() {
+function CreateListForm() {
   const router = useRouter();
-  const { saveCustomList } = useWordList();
+  const { saveCustomList, publishList } = useWordList();
+  const { user } = useAuth();
 
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [wordInput, setWordInput] = useState('');
   const [words, setWords] = useState<string[]>([]);
   const [wordsError, setWordsError] = useState<string | null>(null);
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [agreementError, setAgreementError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleNameChange = (text: string) => {
     setName(text);
@@ -44,7 +50,12 @@ export default function CreateListScreen() {
     setWords((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
+  const handleToggleAgreement = () => {
+    setAgreementAccepted((prev) => !prev);
+    if (agreementError) setAgreementError(null);
+  };
+
+  const handleSave = async () => {
     // Validate name
     const nameValidation = validateListName(name);
     if (nameValidation) {
@@ -59,13 +70,45 @@ export default function CreateListScreen() {
       return;
     }
 
+    // Validate sharing agreement
+    if (!agreementAccepted) {
+      setAgreementError('You must accept the sharing agreement before saving.');
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      saveCustomList({
+      // Save the list locally first
+      const listData = {
         name: name.trim(),
-        type: 'custom',
+        type: 'custom' as const,
         words,
         wordCount: words.length,
-      });
+        creatorUid: user?.uid,
+      };
+
+      saveCustomList(listData);
+
+      // Publish to community library
+      const now = new Date().toISOString();
+      const savedList = {
+        ...listData,
+        id: '', // Will be set by the repository
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // Use publishList to share with community
+      await publishList(
+        {
+          ...savedList,
+          id: savedList.id || 'temp',
+          createdAt: now,
+          updatedAt: now,
+        },
+        agreementAccepted
+      );
+
       router.replace('/');
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -73,103 +116,142 @@ export default function CreateListScreen() {
           setNameError(error.message);
         } else if (error.field === 'words') {
           setWordsError(error.message);
+        } else if (error.field === 'sharingAgreement') {
+          setAgreementError(error.message);
         }
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.content}>
-          <Text style={styles.title}>Create New List</Text>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={styles.content}>
+        <Text style={styles.title}>Create New List</Text>
 
-          {/* Name Input */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>List Name</Text>
+        {/* Name Input */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>List Name</Text>
+          <TextInput
+            style={[styles.input, nameError ? styles.inputError : null]}
+            placeholder="Enter list name"
+            value={name}
+            onChangeText={handleNameChange}
+            testID="name-input"
+            accessibilityLabel="List name"
+          />
+          {nameError && (
+            <Text style={styles.errorText} testID="name-error">
+              {nameError}
+            </Text>
+          )}
+        </View>
+
+        {/* Word Input */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Words</Text>
+          <View style={styles.wordInputRow}>
             <TextInput
-              style={[styles.input, nameError ? styles.inputError : null]}
-              placeholder="Enter list name"
-              value={name}
-              onChangeText={handleNameChange}
-              testID="name-input"
-              accessibilityLabel="List name"
+              style={[styles.input, styles.wordInput]}
+              placeholder="Enter a word"
+              value={wordInput}
+              onChangeText={setWordInput}
+              onSubmitEditing={handleAddWord}
+              testID="word-input"
+              accessibilityLabel="Word input"
             />
-            {nameError && (
-              <Text style={styles.errorText} testID="name-error">
-                {nameError}
-              </Text>
-            )}
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddWord}
+              accessibilityRole="button"
+              accessibilityLabel="Add word"
+              testID="add-word-button"
+            >
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
           </View>
+          {wordsError && (
+            <Text style={styles.errorText} testID="words-error">
+              {wordsError}
+            </Text>
+          )}
+        </View>
 
-          {/* Word Input */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Words</Text>
-            <View style={styles.wordInputRow}>
-              <TextInput
-                style={[styles.input, styles.wordInput]}
-                placeholder="Enter a word"
-                value={wordInput}
-                onChangeText={setWordInput}
-                onSubmitEditing={handleAddWord}
-                testID="word-input"
-                accessibilityLabel="Word input"
-              />
+        {/* Word List */}
+        <FlatList
+          data={words}
+          keyExtractor={(_, index) => index.toString()}
+          style={styles.wordList}
+          renderItem={({ item, index }) => (
+            <View style={styles.wordItem}>
+              <Text style={styles.wordText}>{item}</Text>
               <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddWord}
+                onPress={() => handleDeleteWord(index)}
                 accessibilityRole="button"
-                accessibilityLabel="Add word"
-                testID="add-word-button"
+                accessibilityLabel={`Delete ${item}`}
+                testID={`delete-word-${index}`}
               >
-                <Text style={styles.addButtonText}>Add</Text>
+                <Text style={styles.deleteText}>✕</Text>
               </TouchableOpacity>
             </View>
-            {wordsError && (
-              <Text style={styles.errorText} testID="words-error">
-                {wordsError}
-              </Text>
-            )}
-          </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No words added yet.</Text>
+          }
+        />
 
-          {/* Word List */}
-          <FlatList
-            data={words}
-            keyExtractor={(_, index) => index.toString()}
-            style={styles.wordList}
-            renderItem={({ item, index }) => (
-              <View style={styles.wordItem}>
-                <Text style={styles.wordText}>{item}</Text>
-                <TouchableOpacity
-                  onPress={() => handleDeleteWord(index)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Delete ${item}`}
-                  testID={`delete-word-${index}`}
-                >
-                  <Text style={styles.deleteText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No words added yet.</Text>
-            }
-          />
-
-          {/* Save Button */}
+        {/* Sharing Agreement */}
+        <View style={styles.agreementContainer}>
           <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-            accessibilityRole="button"
-            accessibilityLabel="Save list"
-            testID="save-button"
+            style={styles.agreementRow}
+            onPress={handleToggleAgreement}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: agreementAccepted }}
+            accessibilityLabel="Accept sharing agreement"
+            testID="sharing-agreement-checkbox"
           >
-            <Text style={styles.saveButtonText}>Save List</Text>
+            <View style={[styles.checkbox, agreementAccepted && styles.checkboxChecked]}>
+              {agreementAccepted && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={styles.agreementText}>
+              By saving this list, you agree to share it with the Spelling Mee community.
+            </Text>
           </TouchableOpacity>
+          {agreementError && (
+            <Text style={styles.errorText} testID="agreement-error">
+              {agreementError}
+            </Text>
+          )}
         </View>
-      </KeyboardAvoidingView>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={isSaving}
+          accessibilityRole="button"
+          accessibilityLabel="Save list"
+          testID="save-button"
+        >
+          <Text style={styles.saveButtonText}>
+            {isSaving ? 'Saving...' : 'Save List'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+export default function CreateListScreen() {
+  return (
+    <SafeAreaView style={styles.container}>
+      <AuthGate>
+        <CreateListForm />
+      </AuthGate>
     </SafeAreaView>
   );
 }
@@ -268,12 +350,47 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
   },
+  agreementContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  agreementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#7C4DFF',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#7C4DFF',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  agreementText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 18,
+  },
   saveButton: {
     backgroundColor: '#4CAF50',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 12,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     color: '#fff',

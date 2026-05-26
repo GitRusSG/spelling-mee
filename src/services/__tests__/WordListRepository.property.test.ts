@@ -83,7 +83,17 @@ describe('Property 9: Built-in list immutability', () => {
   it('built-in lists are always present after any sequence of save/delete operations', () => {
     fc.assert(
       fc.property(
-        fc.array(builtinListArb, { minLength: 1, maxLength: 5 }),
+        fc.array(builtinListArb, { minLength: 1, maxLength: 5 })
+          .map(lists => {
+            // Ensure unique IDs among builtin lists
+            const seen = new Set<string>();
+            return lists.filter(l => {
+              if (seen.has(l.id)) return false;
+              seen.add(l.id);
+              return true;
+            });
+          })
+          .filter(lists => lists.length > 0),
         fc.array(customListArb, { minLength: 0, maxLength: 10 }),
         (builtinLists, customLists) => {
           const mockStorage = createMockMMKV() as any;

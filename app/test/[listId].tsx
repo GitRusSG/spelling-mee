@@ -1,23 +1,40 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Text,
   View,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTestSession } from '../../src/contexts/TestSessionContext';
 import { useWordList } from '../../src/contexts/WordListContext';
 import { useSubscription } from '../../src/contexts/SubscriptionContext';
-import { AudioService } from '../../src/services/AudioService';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useVoiceProfile } from '../../src/contexts/VoiceProfileContext';
+import { AudioService, AudioSourceType } from '../../src/services/AudioService';
+import * as DictationStorageService from '../../src/services/DictationStorageService';
 import { AudioUnavailableError } from '../../src/types/errors';
 import { shouldShowAd } from '../../src/services/AdService';
 import ProgressIndicator from '../../src/components/ProgressIndicator';
 import AudioButton from '../../src/components/AudioButton';
 import LetterKeyboard from '../../src/components/LetterKeyboard';
 import InterstitialAd from '../../src/components/InterstitialAd';
+import ConfettiAnimation from '../../src/components/ConfettiAnimation';
 import { InputMode } from '../../src/types';
+
+const ENCOURAGEMENT_MESSAGES = [
+  "You're on fire! 🔥",
+  "Superstar! ⭐",
+  "Keep going! 🚀",
+  "Brilliant! 💫",
+  "Unstoppable! 🌟",
+  "Amazing! 🎉",
+  "Fantastic! 💥",
+];
+
+const INCORRECT_ENCOURAGEMENT = "Almost! You'll get it next time 😊";
 
 type AudioButtonState = 'idle' | 'loading' | 'playing' | 'error';
 
@@ -27,11 +44,19 @@ interface Feedback {
   given: string;
 }
 
+const SOURCE_LABELS: Record<AudioSourceType, string> = {
+  'dictation': '🎙️ Parent\'s voice',
+  'voice-profile': '🗣️ Custom voice',
+  'default': '🔊 Default',
+};
+
 export default function TestScreen() {
   const { listId } = useLocalSearchParams<{ listId: string }>();
   const router = useRouter();
   const { getById } = useWordList();
   const { status: subscriptionStatus } = useSubscription();
+  const { user } = useAuth();
+  const { profile: voiceProfile } = useVoiceProfile();
   const {
     wordList: sessionWordList,
     currentIndex,
@@ -48,10 +73,81 @@ export default function TestScreen() {
   const [inputMode, setInputMode] = useState<InputMode>('text');
   const [letterSequence, setLetterSequence] = useState('');
   const [showAd, setShowAd] = useState(() => shouldShowAd(subscriptionStatus));
+  const [audioSource, setAudioSource] = useState<AudioSourceType | null>(null);
+  const [allSourcesFailed, setAllSourcesFailed] = useState(false);
+  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
+  const fallbackOpacity = useRef(new Animated.Value(0)).current;
+
+  // Gamification state
+  const [confettiTrigger, setConfettiTrigger] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [encouragementMessage, setEncouragementMessage] = useState<string | null>(null);
+  const encouragementOpacity = useRef(new Animated.Value(0)).current;
+  const streakGlow = useRef(new Animated.Value(0)).current;
+  const [showStreakGlow, setShowStreakGlow] = useState(false);
 
   const handleAdClose = useCallback(() => {
     setShowAd(false);
   }, []);
+
+  // Show encouragement message with fade animation
+  const showEncouragement = useCallback((message: string) => {
+    setEncouragementMessage(message);
+    encouragementOpacity.setValue(1);
+    Animated.timing(encouragementOpacity, {
+      toValue: 0,
+      duration: 500,
+      delay: 1500,
+      useNativeDriver: true,
+    }).start(() => {
+      setEncouragementMessage(null);
+    });
+  }, [encouragementOpacity]);
+
+  // Animate streak glow for milestones
+  const animateStreakGlow = useCallback(() => {
+    setShowStreakGlow(true);
+    streakGlow.setValue(0);
+    Animated.sequence([
+      Animated.timing(streakGlow, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(streakGlow, {
+        toValue: 0,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowStreakGlow(false);
+    });
+  }, [streakGlow]);
+
+  // Show a brief fallback notification that fades after 2 seconds
+  const showFallbackNotice = useCallback((message: string) => {
+    setFallbackNotice(message);
+    fallbackOpacity.setValue(1);
+    Animated.timing(fallbackOpacity, {
+      toValue: 0,
+      duration: 500,
+      delay: 1500,
+      useNativeDriver: true,
+    }).start(() => {
+      setFallbackNotice(null);
+    });
+  }, [fallbackOpacity]);
+
+  // Look up dictation URL for a word
+  const getDictationUrl = useCallback(async (word: string): Promise<string | null> => {
+    if (!user?.uid) return null;
+    try {
+      return await DictationStorageService.getDownloadUrl(user.uid, listId, word);
+    } catch {
+      return null;
+    }
+  }, [user, listId]);
 
   // Initialize session on mount
   useEffect(() => {
@@ -83,19 +179,46 @@ export default function TestScreen() {
 
   const playWord = useCallback(async (word: string) => {
     setAudioState('loading');
+    setAllSourcesFailed(false);
     try {
-      await AudioService.playWord(word);
+      // Look up dictation URL
+      const dictationUrl = await getDictationUrl(word);
+
+      // Determine if we expected dictation but it will fail (for fallback notice)
+      const hadDictation = !!dictationUrl;
+
+      const result = await AudioService.playWord(word, {
+        dictationUrl,
+        voiceProfile,
+      });
+
+      setAudioSource(result.sourceUsed);
       setAudioState('idle');
+
+      // If we had a dictation URL but ended up using TTS, show fallback notice
+      if (hadDictation && result.sourceUsed !== 'dictation') {
+        showFallbackNotice('Using TTS voice');
+      }
     } catch (error) {
       if (error instanceof AudioUnavailableError) {
         setAudioState('error');
+        setAllSourcesFailed(true);
+        setAudioSource(null);
       } else {
         setAudioState('error');
+        setAllSourcesFailed(true);
+        setAudioSource(null);
       }
     }
-  }, []);
+  }, [getDictationUrl, voiceProfile, showFallbackNotice]);
 
   const handleAudioPress = useCallback(() => {
+    if (!sessionWordList) return;
+    const currentWord = sessionWordList.words[currentIndex];
+    playWord(currentWord);
+  }, [sessionWordList, currentIndex, playWord]);
+
+  const handleRetry = useCallback(() => {
     if (!sessionWordList) return;
     const currentWord = sessionWordList.words[currentIndex];
     playWord(currentWord);
@@ -116,6 +239,35 @@ export default function TestScreen() {
       given: currentAnswer.trim(),
     });
 
+    // Gamification: confetti, streak, encouragement
+    if (isCorrect) {
+      // Trigger confetti
+      setConfettiTrigger(false);
+      setTimeout(() => setConfettiTrigger(true), 10);
+
+      // Update streak
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+
+      // Check for streak milestones (3, 5, 10)
+      if (newStreak === 3 || newStreak === 5 || newStreak === 10) {
+        animateStreakGlow();
+      }
+
+      // Update total correct and show encouragement every 3rd correct
+      const newTotalCorrect = totalCorrect + 1;
+      setTotalCorrect(newTotalCorrect);
+      if (newTotalCorrect % 3 === 0) {
+        const randomMsg = ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
+        showEncouragement(randomMsg);
+      }
+    } else {
+      // Reset streak on incorrect
+      setStreak(0);
+      // Show gentle encouragement on incorrect
+      showEncouragement(INCORRECT_ENCOURAGEMENT);
+    }
+
     // Submit the answer (this advances the index or completes the session)
     submitAnswer(currentAnswer);
     setAnswer('');
@@ -126,10 +278,11 @@ export default function TestScreen() {
     if (nextIndex < sessionWordList.words.length) {
       setTimeout(() => {
         setFeedback(null);
+        setConfettiTrigger(false);
         playWord(sessionWordList.words[nextIndex]);
       }, 1500);
     }
-  }, [sessionWordList, currentIndex, answer, letterSequence, inputMode, status, submitAnswer, playWord]);
+  }, [sessionWordList, currentIndex, answer, letterSequence, inputMode, status, submitAnswer, playWord, streak, totalCorrect, showEncouragement, animateStreakGlow]);
 
   const handleLetterPress = useCallback((letter: string) => {
     setLetterSequence((prev) => prev + letter.toLowerCase());
@@ -171,14 +324,77 @@ export default function TestScreen() {
   return (
     <View style={styles.container}>
       <InterstitialAd visible={showAd} onClose={handleAdClose} />
+      <ConfettiAnimation trigger={confettiTrigger} intensity="small" />
       <ProgressIndicator
         current={currentIndex + 1}
         total={sessionWordList.words.length}
       />
 
+      {/* Streak counter */}
+      {streak >= 2 && (
+        <Animated.View
+          style={[
+            styles.streakContainer,
+            showStreakGlow && {
+              opacity: streakGlow.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 1],
+              }),
+              transform: [{
+                scale: streakGlow.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [1, 1.3, 1],
+                }),
+              }],
+            },
+          ]}
+          testID="streak-counter"
+        >
+          <Text style={styles.streakText}>🔥 {streak} in a row!</Text>
+        </Animated.View>
+      )}
+
+      {/* Encouragement message */}
+      {encouragementMessage && (
+        <Animated.View
+          style={[styles.encouragementContainer, { opacity: encouragementOpacity }]}
+          testID="encouragement-message"
+        >
+          <Text style={styles.encouragementText}>{encouragementMessage}</Text>
+        </Animated.View>
+      )}
+
       <View style={styles.audioSection}>
         <AudioButton onPress={handleAudioPress} state={audioState} />
+        {audioSource && (
+          <Text style={styles.audioSourceIndicator} testID="audio-source-indicator">
+            {SOURCE_LABELS[audioSource]}
+          </Text>
+        )}
       </View>
+
+      {/* Fallback notification */}
+      {fallbackNotice && (
+        <Animated.View style={[styles.fallbackNotice, { opacity: fallbackOpacity }]} testID="fallback-notice">
+          <Text style={styles.fallbackNoticeText}>{fallbackNotice}</Text>
+        </Animated.View>
+      )}
+
+      {/* All sources failed — error + retry */}
+      {allSourcesFailed && (
+        <View style={styles.errorContainer} testID="audio-error-container">
+          <Text style={styles.audioErrorText}>Unable to play audio</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={handleRetry}
+            testID="retry-button"
+            accessibilityRole="button"
+            accessibilityLabel="Retry audio playback"
+          >
+            <Text style={styles.retryButtonText}>Retry 🔄</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {feedback && (
         <View
@@ -286,6 +502,50 @@ const styles = StyleSheet.create({
   },
   audioSection: {
     marginVertical: 24,
+    alignItems: 'center',
+  },
+  audioSourceIndicator: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#6A1B9A',
+    fontWeight: '600',
+  },
+  fallbackNotice: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  fallbackNoticeText: {
+    fontSize: 13,
+    color: '#E65100',
+    fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  audioErrorText: {
+    fontSize: 14,
+    color: '#C62828',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  retryButton: {
+    backgroundColor: '#FF6D00',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    minHeight: 36,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   inputSection: {
     width: '100%',
@@ -391,5 +651,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 4,
     color: '#4A148C',
+  },
+  streakContainer: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#FF6D00',
+  },
+  streakText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#E65100',
+    textAlign: 'center',
+  },
+  encouragementContainer: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  encouragementText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2E7D32',
+    textAlign: 'center',
   },
 });

@@ -9,13 +9,23 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useWordList } from '../../../src/contexts/WordListContext';
+import { useAuth } from '../../../src/contexts/AuthContext';
+import { CustomWordList } from '../../../src/types';
 
 export default function PreviewScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getById } = useWordList();
+  const { isAuthenticated, user } = useAuth();
 
   const list = id ? getById(id) : undefined;
+
+  // Check if the current user owns this custom list
+  const isOwnedCustomList =
+    list?.type === 'custom' &&
+    isAuthenticated &&
+    user &&
+    (list as CustomWordList).creatorUid === user.uid;
 
   if (!list) {
     return (
@@ -62,6 +72,19 @@ export default function PreviewScreen() {
             <Text style={styles.emptyText}>No words in this list.</Text>
           }
         />
+
+        {/* Record Dictation Button — only for owned custom lists */}
+        {isOwnedCustomList && (
+          <TouchableOpacity
+            style={styles.dictationButton}
+            onPress={() => router.push(`/list/${id}/dictation`)}
+            accessibilityRole="button"
+            accessibilityLabel="Record Dictation"
+            testID="record-dictation-button"
+          >
+            <Text style={styles.dictationButtonText}>🎙️ Record Dictation</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Start Test Button */}
         <TouchableOpacity
@@ -151,6 +174,18 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   startButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dictationButton: {
+    backgroundColor: '#7C4DFF',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  dictationButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

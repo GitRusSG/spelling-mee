@@ -12,10 +12,15 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { validateEmail, validatePassword } from '../../src/utils/validation';
+import { createProfile } from '../../src/services/UserProfileService';
+import { useWordList } from '../../src/contexts/WordListContext';
+import { CustomWordList } from '../../src/types';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const { lists, migrateLocalLists } = useWordList();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,17 +38,23 @@ export default function RegisterScreen() {
     if (!email.trim()) {
       setEmailError('Email is required');
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
-      setEmailError('Enter a valid email address');
-      valid = false;
+    } else {
+      const emailResult = validateEmail(email.trim());
+      if (!emailResult.valid) {
+        setEmailError('Enter a valid email address');
+        valid = false;
+      }
     }
 
     if (!password) {
       setPasswordError('Password is required');
       valid = false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      valid = false;
+    } else {
+      const passwordResult = validatePassword(password);
+      if (!passwordResult.valid) {
+        setPasswordError('Password must be at least 8 characters');
+        valid = false;
+      }
     }
 
     return valid;
@@ -56,14 +67,27 @@ export default function RegisterScreen() {
     setGeneralError(null);
 
     try {
-      await signUp(email.trim(), password);
+      const user = await signUp(email.trim(), password);
+
+      // Create user profile in Firestore
+      const displayName = email.trim().split('@')[0];
+      await createProfile(user.uid, { email: email.trim(), displayName });
+
+      // Trigger local list migration for any existing custom lists
+      const localCustomLists = lists.filter(
+        (l): l is CustomWordList => l.type === 'custom' && !l.creatorUid
+      );
+      if (localCustomLists.length > 0) {
+        migrateLocalLists(localCustomLists);
+      }
+
       router.replace('/');
     } catch (error: any) {
       const code = error?.code ?? '';
       if (code === 'auth/email-already-in-use') {
         setEmailError('An account with this email already exists');
       } else if (code === 'auth/weak-password') {
-        setPasswordError('Password is too weak. Use at least 6 characters.');
+        setPasswordError('Password is too weak. Use at least 8 characters.');
       } else if (code === 'auth/invalid-email') {
         setEmailError('Enter a valid email address');
       } else {
@@ -112,7 +136,7 @@ export default function RegisterScreen() {
             <Text style={styles.label}>Password</Text>
             <TextInput
               style={[styles.input, passwordError ? styles.inputError : null]}
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={password}
               onChangeText={setPassword}
               secureTextEntry

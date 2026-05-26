@@ -29,7 +29,11 @@ describe('WordListCard', () => {
     const { getByTestId } = render(
       <WordListCard list={builtinList} onPress={jest.fn()} />
     );
-    expect(getByTestId('word-list-card-name').props.children).toBe('Top Schools');
+    const nameEl = getByTestId('word-list-card-name');
+    // Component renders: {emoji} {list.name} — children is an array like ["📖", " ", "Top Schools"]
+    const children = nameEl.props.children;
+    const text = Array.isArray(children) ? children.join('') : children;
+    expect(text).toContain('Top Schools');
   });
 
   it('renders the word count', () => {
@@ -83,17 +87,17 @@ describe('WordListCard', () => {
 
 describe('ProgressIndicator', () => {
   it('renders "Word 1 of 10"', () => {
-    const { getByText } = render(
+    const { getByLabelText } = render(
       <ProgressIndicator current={1} total={10} />
     );
-    expect(getByText('Word 1 of 10')).toBeTruthy();
+    expect(getByLabelText('Word 1 of 10')).toBeTruthy();
   });
 
   it('renders "Word 5 of 20"', () => {
-    const { getByText } = render(
+    const { getByLabelText } = render(
       <ProgressIndicator current={5} total={20} />
     );
-    expect(getByText('Word 5 of 20')).toBeTruthy();
+    expect(getByLabelText('Word 5 of 20')).toBeTruthy();
   });
 
   it('renders correct accessibility label', () => {
@@ -107,11 +111,11 @@ describe('ProgressIndicator', () => {
 // ─── AudioButton Tests ───────────────────────────────────────────────────────
 
 describe('AudioButton', () => {
-  it('renders "Play" label in idle state', () => {
+  it('renders "Hear the word!" label in idle state', () => {
     const { getByText } = render(
       <AudioButton onPress={jest.fn()} state="idle" />
     );
-    expect(getByText('Play')).toBeTruthy();
+    expect(getByText('Hear the word!')).toBeTruthy();
   });
 
   it('renders "Loading…" label and spinner in loading state', () => {
@@ -129,11 +133,11 @@ describe('AudioButton', () => {
     expect(getByText('Playing…')).toBeTruthy();
   });
 
-  it('renders "Retry" label and error indicator in error state', () => {
+  it('renders "Oops! Try again" label and error indicator in error state', () => {
     const { getByText, getByTestId } = render(
       <AudioButton onPress={jest.fn()} state="error" />
     );
-    expect(getByText('Retry')).toBeTruthy();
+    expect(getByText('Oops! Try again')).toBeTruthy();
     expect(getByTestId('audio-button-error-indicator')).toBeTruthy();
   });
 

@@ -12,7 +12,7 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<User>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -31,8 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+  const signUp = useCallback(async (email: string, password: string): Promise<User> => {
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    return credential.user;
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {

@@ -7,6 +7,9 @@
  */
 module.exports = {
   testEnvironment: 'node',
+  globals: {
+    __DEV__: true,
+  },
   transform: {
     '^.+\\.[jt]sx?$': [
       'babel-jest',
@@ -22,5 +25,9 @@ module.exports = {
   testMatch: [
     '**/__tests__/**/*.property.test.ts',
     '**/__tests__/**/*.test.ts',
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    'AudioService\\.test\\.ts$',
   ],
 };

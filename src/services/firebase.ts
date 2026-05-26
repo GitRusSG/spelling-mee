@@ -14,6 +14,8 @@
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? 'AIzaSyAAziAfq_-6Gnfm12d1FLsKeyM_19rt5ro',
@@ -30,4 +32,10 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 // Initialize Auth — uses browser persistence on web, in-memory on native
 const auth = getAuth(app);
 
-export { app, auth };
+// Initialize Firestore — used for user profiles, shared lists, dictation metadata
+const db = getFirestore(app);
+
+// Initialize Firebase Storage — used for dictation audio file uploads/downloads
+const storage = getStorage(app);
+
+export { app, auth, db, storage };

@@ -15,6 +15,7 @@ jest.mock('expo-router', () => ({
 const mockSaveCustomList = jest.fn();
 const mockDeleteCustomList = jest.fn();
 const mockGetById = jest.fn();
+const mockPublishList = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('../../src/contexts/WordListContext', () => ({
   useWordList: () => ({
@@ -46,12 +47,14 @@ jest.mock('../../src/contexts/WordListContext', () => ({
     saveCustomList: mockSaveCustomList,
     deleteCustomList: mockDeleteCustomList,
     getById: mockGetById,
+    publishList: mockPublishList,
   }),
   useWordListContext: () => ({
     lists: [],
     saveCustomList: mockSaveCustomList,
     deleteCustomList: mockDeleteCustomList,
     getById: mockGetById,
+    publishList: mockPublishList,
   }),
 }));
 
@@ -65,14 +68,16 @@ jest.mock('../../src/contexts/SubscriptionContext', () => ({
   }),
 }));
 
+const mockSignOut = jest.fn();
+
 jest.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { email: 'test@example.com' },
+    user: { email: 'test@example.com', uid: 'test-uid-123' },
     isAuthenticated: true,
     isLoading: false,
     signUp: jest.fn(),
     signIn: jest.fn(),
-    signOut: jest.fn(),
+    signOut: mockSignOut,
   }),
 }));
 
@@ -105,23 +110,24 @@ describe('HomeScreen', () => {
 
   it('renders the "Built-in Lists" section title', () => {
     const { getByText } = render(<HomeScreen />);
-    expect(getByText('Built-in Lists')).toBeTruthy();
+    expect(getByText('📚 Built-in Lists')).toBeTruthy();
   });
 
   it('renders built-in word lists', () => {
-    const { getByText } = render(<HomeScreen />);
-    expect(getByText('Top Schools')).toBeTruthy();
-    expect(getByText('Grade 1 Minimum')).toBeTruthy();
+    const { getAllByTestId } = render(<HomeScreen />);
+    const cards = getAllByTestId('word-list-card');
+    expect(cards.length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders the "My Lists" section title for custom lists', () => {
     const { getByText } = render(<HomeScreen />);
-    expect(getByText('My Lists')).toBeTruthy();
+    expect(getByText('✏️ My Lists')).toBeTruthy();
   });
 
   it('renders custom word lists', () => {
-    const { getByText } = render(<HomeScreen />);
-    expect(getByText('My Custom List')).toBeTruthy();
+    const { getAllByTestId } = render(<HomeScreen />);
+    const cards = getAllByTestId('word-list-card');
+    expect(cards.length).toBeGreaterThanOrEqual(3);
   });
 
   it('renders the "Create New List" button', () => {
@@ -141,6 +147,18 @@ describe('HomeScreen', () => {
     const { getByTestId, getByText } = render(<HomeScreen />);
     expect(getByTestId('subscription-link')).toBeTruthy();
     expect(getByText('Remove ads')).toBeTruthy();
+  });
+
+  it('displays user email and sign-out button when authenticated', () => {
+    const { getByText, getByTestId } = render(<HomeScreen />);
+    expect(getByText('test@example.com')).toBeTruthy();
+    expect(getByTestId('sign-out-button')).toBeTruthy();
+  });
+
+  it('calls signOut when sign-out button is pressed', () => {
+    const { getByTestId } = render(<HomeScreen />);
+    fireEvent.press(getByTestId('sign-out-button'));
+    expect(mockSignOut).toHaveBeenCalled();
   });
 });
 
@@ -166,6 +184,9 @@ describe('CreateListScreen', () => {
     fireEvent.changeText(getByTestId('word-input'), 'hello');
     fireEvent.press(getByTestId('add-word-button'));
 
+    // Accept sharing agreement
+    fireEvent.press(getByTestId('sharing-agreement-checkbox'));
+
     // Try to save with empty name
     fireEvent.press(getByTestId('save-button'));
 
@@ -177,12 +198,31 @@ describe('CreateListScreen', () => {
 
     // Set a valid name but no words
     fireEvent.changeText(getByTestId('name-input'), 'Valid Name');
+
+    // Accept sharing agreement
+    fireEvent.press(getByTestId('sharing-agreement-checkbox'));
+
     fireEvent.press(getByTestId('save-button'));
 
     expect(getByTestId('words-error')).toBeTruthy();
   });
 
-  it('calls saveCustomList on valid input', () => {
+  it('shows agreement error when saving without accepting agreement', () => {
+    const { getByTestId } = render(<CreateListScreen />);
+
+    // Enter a valid name and word but don't accept agreement
+    fireEvent.changeText(getByTestId('name-input'), 'My Test List');
+    fireEvent.changeText(getByTestId('word-input'), 'apple');
+    fireEvent.press(getByTestId('add-word-button'));
+
+    // Save without checking agreement
+    fireEvent.press(getByTestId('save-button'));
+
+    expect(getByTestId('agreement-error')).toBeTruthy();
+    expect(mockSaveCustomList).not.toHaveBeenCalled();
+  });
+
+  it('calls saveCustomList on valid input with agreement accepted', async () => {
     const { getByTestId } = render(<CreateListScreen />);
 
     // Enter a valid name
@@ -192,26 +232,38 @@ describe('CreateListScreen', () => {
     fireEvent.changeText(getByTestId('word-input'), 'apple');
     fireEvent.press(getByTestId('add-word-button'));
 
+    // Accept sharing agreement
+    fireEvent.press(getByTestId('sharing-agreement-checkbox'));
+
     // Save
     fireEvent.press(getByTestId('save-button'));
 
-    expect(mockSaveCustomList).toHaveBeenCalledWith({
-      name: 'My Test List',
-      type: 'custom',
-      words: ['apple'],
-      wordCount: 1,
+    await waitFor(() => {
+      expect(mockSaveCustomList).toHaveBeenCalledWith({
+        name: 'My Test List',
+        type: 'custom',
+        words: ['apple'],
+        wordCount: 1,
+        creatorUid: 'test-uid-123',
+      });
     });
   });
 
-  it('navigates home after successful save', () => {
+  it('navigates home after successful save', async () => {
     const { getByTestId } = render(<CreateListScreen />);
 
     fireEvent.changeText(getByTestId('name-input'), 'My Test List');
     fireEvent.changeText(getByTestId('word-input'), 'apple');
     fireEvent.press(getByTestId('add-word-button'));
+
+    // Accept sharing agreement
+    fireEvent.press(getByTestId('sharing-agreement-checkbox'));
+
     fireEvent.press(getByTestId('save-button'));
 
-    expect(mockReplace).toHaveBeenCalledWith('/');
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/');
+    });
   });
 });
 

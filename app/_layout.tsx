@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { WordListProvider } from '../src/contexts/WordListContext';
 import { SubscriptionProvider, useSubscription } from '../src/contexts/SubscriptionContext';
+import { VoiceProfileProvider } from '../src/contexts/VoiceProfileContext';
 import AdBanner from '../src/components/AdBanner';
 
 function InnerLayout() {
@@ -18,10 +19,13 @@ function InnerLayout() {
         <Stack.Screen name="list/[id]/edit" options={{ title: 'Edit List' }} />
         <Stack.Screen name="list/[id]/preview" options={{ title: 'Preview List' }} />
         <Stack.Screen
-          name="test/[listId]"
-          options={{ title: 'Spelling Test' }}
+          name="test"
+          options={{ headerShown: false }}
         />
-        <Stack.Screen name="test/results" options={{ title: 'Results' }} />
+        <Stack.Screen name="community/index" options={{ title: 'Community Library' }} />
+        <Stack.Screen name="community/[listId]" options={{ title: 'Shared List' }} />
+        <Stack.Screen name="settings/voice" options={{ title: 'Voice Settings' }} />
+        <Stack.Screen name="list/[id]/dictation" options={{ title: 'Record Dictation' }} />
         <Stack.Screen name="subscription" options={{ title: 'Subscription' }} />
       </Stack>
       {!isSubscribed && <AdBanner />}
@@ -33,9 +37,11 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <WordListProvider>
-        <SubscriptionProvider>
-          <InnerLayout />
-        </SubscriptionProvider>
+        <VoiceProfileProvider>
+          <SubscriptionProvider>
+            <InnerLayout />
+          </SubscriptionProvider>
+        </VoiceProfileProvider>
       </WordListProvider>
     </AuthProvider>
   );
