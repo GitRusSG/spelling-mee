@@ -484,13 +484,6 @@ export default function TestScreen() {
               <Text style={styles.dictateButtonText}>🎤 Dictate</Text>
             </TouchableOpacity>
 
-            <Text style={styles.orText}>or tap the letters below</Text>
-
-            <LetterKeyboard
-              onLetterPress={handleLetterPress}
-              onBackspace={handleBackspace}
-            />
-
             <TouchableOpacity
               style={[
                 styles.submitButton,
