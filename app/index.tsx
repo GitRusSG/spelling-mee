@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import { useSubscription } from '../src/contexts/SubscriptionContext';
 import { useAuth } from '../src/contexts/AuthContext';
 import WordListCard from '../src/components/WordListCard';
 import { CustomWordList } from '../src/types';
+import { BLITZ_LISTS, GRADE_LISTS } from '../src/data/builtinLists';
+
+const GRADE_ORDER = ['K1', 'K2', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6'];
 
 export default function HomeScreen() {
   const { lists } = useWordList();
@@ -20,8 +23,30 @@ export default function HomeScreen() {
   const { isAuthenticated, user, signOut } = useAuth();
   const router = useRouter();
 
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    blitz: false,
+    grades: false,
+    other: false,
+  });
+  const [expandedGrades, setExpandedGrades] = useState<Record<string, boolean>>({});
+
   const builtinLists = lists.filter((list) => list.type === 'builtin');
   const customLists = lists.filter((list) => list.type === 'custom');
+
+  // Separate built-in lists into categories
+  const blitzIds = new Set(BLITZ_LISTS.map((l) => l.id));
+  const gradeIds = new Set(Object.values(GRADE_LISTS).flat().map((l) => l.id));
+  const otherBuiltinLists = builtinLists.filter(
+    (l) => !blitzIds.has(l.id) && !gradeIds.has(l.id)
+  );
+
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleGrade = (grade: string) => {
+    setExpandedGrades((prev) => ({ ...prev, [grade]: !prev[grade] }));
+  };
 
   const handleCreateList = () => {
     if (isAuthenticated) {
@@ -65,21 +90,123 @@ export default function HomeScreen() {
         {/* Built-in Lists Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📚 Built-in Lists</Text>
-          {builtinLists.map((list) => (
-            <WordListCard
-              key={list.id}
-              list={list}
-              onPress={() => router.push(`/test/${list.id}`)}
-            />
-          ))}
+
+          {/* Blitz Section */}
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection('blitz')}
+            accessibilityRole="button"
+            accessibilityLabel={`Blitz section, ${expandedSections.blitz ? 'collapse' : 'expand'}`}
+            testID="blitz-section-header"
+          >
+            <Text style={styles.collapsibleHeaderText}>
+              {expandedSections.blitz ? '▼' : '▶'} ⚡ Blitz
+            </Text>
+          </TouchableOpacity>
+          {expandedSections.blitz && (
+            <View style={styles.collapsibleContent}>
+              {BLITZ_LISTS.map((list) => (
+                <WordListCard
+                  key={list.id}
+                  list={list}
+                  onPress={() => router.push(`/test/${list.id}`)}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* By Grade Section */}
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection('grades')}
+            accessibilityRole="button"
+            accessibilityLabel={`By Grade section, ${expandedSections.grades ? 'collapse' : 'expand'}`}
+            testID="grades-section-header"
+          >
+            <Text style={styles.collapsibleHeaderText}>
+              {expandedSections.grades ? '▼' : '▶'} 📚 By Grade
+            </Text>
+          </TouchableOpacity>
+          {expandedSections.grades && (
+            <View style={styles.collapsibleContent}>
+              {GRADE_ORDER.map((grade) => (
+                <View key={grade}>
+                  <TouchableOpacity
+                    style={styles.gradeHeader}
+                    onPress={() => toggleGrade(grade)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Grade ${grade}, ${expandedGrades[grade] ? 'collapse' : 'expand'}`}
+                    testID={`grade-${grade}-header`}
+                  >
+                    <Text style={styles.gradeHeaderText}>
+                      {expandedGrades[grade] ? '▼' : '▶'} {grade}
+                    </Text>
+                  </TouchableOpacity>
+                  {expandedGrades[grade] && GRADE_LISTS[grade] && (
+                    <View style={styles.gradeContent}>
+                      {GRADE_LISTS[grade].map((list) => (
+                        <WordListCard
+                          key={list.id}
+                          list={list}
+                          onPress={() => router.push(`/test/${list.id}`)}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Other Section */}
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection('other')}
+            accessibilityRole="button"
+            accessibilityLabel={`Other section, ${expandedSections.other ? 'collapse' : 'expand'}`}
+            testID="other-section-header"
+          >
+            <Text style={styles.collapsibleHeaderText}>
+              {expandedSections.other ? '▼' : '▶'} 📖 Other
+            </Text>
+          </TouchableOpacity>
+          {expandedSections.other && (
+            <View style={styles.collapsibleContent}>
+              {otherBuiltinLists.map((list) => (
+                <WordListCard
+                  key={list.id}
+                  list={list}
+                  onPress={() => router.push(`/test/${list.id}`)}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Custom Lists Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>✏️ My Lists</Text>
+
+          {/* Create New List Button — directly below My Lists header */}
+          <TouchableOpacity
+            style={[styles.createButton, !isAuthenticated && styles.createButtonDisabled]}
+            onPress={handleCreateList}
+            accessibilityRole="button"
+            accessibilityLabel="Create new list"
+            accessibilityState={{ disabled: !isAuthenticated }}
+            testID="create-list-button"
+          >
+            <Text style={styles.createButtonText}>✨ Create New List</Text>
+          </TouchableOpacity>
+          {!isAuthenticated && (
+            <Text style={styles.createDisabledMessage} testID="create-list-auth-message">
+              Sign in to create and share custom word lists
+            </Text>
+          )}
+
           {customLists.length === 0 ? (
             <Text style={styles.emptyText}>
-              You haven't made any lists yet. Tap the button below to create your first one! 🌟
+              You haven't made any lists yet. Tap the button above to create your first one! 🌟
             </Text>
           ) : (
             customLists.map((list) => {
@@ -131,23 +258,6 @@ export default function HomeScreen() {
         >
           <Text style={styles.voiceSettingsButtonText}>🎙️ Voice Settings</Text>
         </TouchableOpacity>
-
-        {/* Create New List Button */}
-        <TouchableOpacity
-          style={[styles.createButton, !isAuthenticated && styles.createButtonDisabled]}
-          onPress={handleCreateList}
-          accessibilityRole="button"
-          accessibilityLabel="Create new list"
-          accessibilityState={{ disabled: !isAuthenticated }}
-          testID="create-list-button"
-        >
-          <Text style={styles.createButtonText}>✨ Create New List</Text>
-        </TouchableOpacity>
-        {!isAuthenticated && (
-          <Text style={styles.createDisabledMessage} testID="create-list-auth-message">
-            Sign in to create and share custom word lists
-          </Text>
-        )}
 
         {/* Subscription link */}
         <TouchableOpacity
@@ -218,6 +328,38 @@ const styles = StyleSheet.create({
     color: '#4A148C',
     marginBottom: 12,
   },
+  collapsibleHeader: {
+    backgroundColor: '#EDE7F6',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 6,
+  },
+  collapsibleHeaderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A148C',
+  },
+  collapsibleContent: {
+    paddingLeft: 8,
+    marginBottom: 8,
+  },
+  gradeHeader: {
+    backgroundColor: '#F3E5F5',
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 4,
+  },
+  gradeHeaderText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6A1B9A',
+  },
+  gradeContent: {
+    paddingLeft: 12,
+    marginBottom: 6,
+  },
   emptyText: {
     fontSize: 15,
     color: '#7C4DFF',
@@ -264,7 +406,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 8,
     shadowColor: '#7C4DFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -286,7 +428,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     textAlign: 'center',
-    marginTop: 6,
+    marginBottom: 8,
     fontStyle: 'italic',
   },
   subscriptionLink: {

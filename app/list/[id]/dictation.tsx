@@ -69,21 +69,20 @@ function DictationContent() {
 
     // Load existing recording URLs for each word
     async function loadRecordings() {
-      const states: WordRecordingState[] = [];
-      for (const word of currentList!.words) {
-        let downloadUrl: string | null = null;
-        try {
-          downloadUrl = await DictationStorageService.getDownloadUrl(user!.uid, id!, word);
-        } catch {
-          // No recording exists or fetch failed — that's fine
-        }
-        states.push({
-          word,
-          downloadUrl,
-          isUploading: false,
-          isPlaying: false,
-        });
-      }
+      const results = await Promise.allSettled(
+        currentList!.words.map(async (word) => {
+          try {
+            const downloadUrl = await DictationStorageService.getDownloadUrl(user!.uid, id!, word);
+            return { word, downloadUrl };
+          } catch {
+            return { word, downloadUrl: null };
+          }
+        })
+      );
+      const states: WordRecordingState[] = results.map((result) => {
+        const { word, downloadUrl } = result.status === 'fulfilled' ? result.value : { word: '', downloadUrl: null };
+        return { word, downloadUrl, isUploading: false, isPlaying: false };
+      });
       setWordStates(states);
       setIsLoading(false);
     }

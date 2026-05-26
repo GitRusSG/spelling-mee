@@ -1,0 +1,7 @@
+{
+  "id": "blitz-easy",
+  "name": "⚡ Blitz: Easy",
+  "type": "builtin",
+  "words": ["cat", "dog", "sun", "hat", "run"],
+  "wordCount": 5
+}

@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useWordList } from '../../src/contexts/WordListContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { validateListName, validateWordList } from '../../src/utils/validation';
+import { containsProfanity, nameContainsProfanity } from '../../src/utils/profanityFilter';
 import { ValidationError } from '../../src/types/errors';
 import AuthGate from '../../src/components/AuthGate';
 
@@ -40,6 +41,10 @@ function CreateListForm() {
   const handleAddWord = () => {
     const trimmed = wordInput.trim();
     if (trimmed.length === 0) return;
+    if (containsProfanity(trimmed)) {
+      setWordsError('Please remove inappropriate words');
+      return;
+    }
     setWords((prev) => [...prev, trimmed]);
     setWordInput('');
     // Clear words error when a word is added
@@ -63,10 +68,22 @@ function CreateListForm() {
       return;
     }
 
+    // Check name for profanity
+    if (nameContainsProfanity(name)) {
+      setNameError('Please choose an appropriate list name');
+      return;
+    }
+
     // Validate words
     const wordsValidation = validateWordList(words);
     if (wordsValidation) {
       setWordsError(wordsValidation.message);
+      return;
+    }
+
+    // Check words for profanity
+    if (words.some((word) => containsProfanity(word))) {
+      setWordsError('Please remove inappropriate words');
       return;
     }
 
