@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Animated,
   Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTestSession } from '../../src/contexts/TestSessionContext';
@@ -73,6 +74,10 @@ export default function TestScreen() {
   const [initialized, setInitialized] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>('text');
   const [letterSequence, setLetterSequence] = useState('');
+  const [isDictating, setIsDictating] = useState(false);
+  const [dictationFeedback, setDictationFeedback] = useState<string | null>(null);
+  const dictationFeedbackOpacity = useRef(new Animated.Value(0)).current;
+  const recognitionRef = useRef<any>(null);
   const [showAd, setShowAd] = useState(() => shouldShowAd(subscriptionStatus));
   const [audioSource, setAudioSource] = useState<AudioSourceType | null>(null);
   const [allSourcesFailed, setAllSourcesFailed] = useState(false);
@@ -125,6 +130,165 @@ export default function TestScreen() {
       setShowStreakGlow(false);
     });
   }, [streakGlow]);
+
+  // Map spoken text to a single letter A-Z
+  const mapSpokenToLetter = useCallback((spoken: string): string | null => {
+    const text = spoken.trim().toLowerCase();
+
+    // Direct single letter match
+    if (/^[a-z]$/.test(text)) return text.toUpperCase();
+
+    // Common spoken forms of letters
+    const spokenMap: Record<string, string> = {
+      'ay': 'A', 'a': 'A',
+      'bee': 'B', 'be': 'B',
+      'see': 'C', 'sea': 'C', 'c': 'C',
+      'dee': 'D',
+      'ee': 'E', 'e': 'E',
+      'ef': 'F', 'eff': 'F',
+      'gee': 'G',
+      'aitch': 'H', 'h': 'H',
+      'eye': 'I', 'i': 'I',
+      'jay': 'J',
+      'kay': 'K',
+      'el': 'L', 'ell': 'L',
+      'em': 'M',
+      'en': 'N',
+      'oh': 'O', 'o': 'O',
+      'pee': 'P',
+      'cue': 'Q', 'queue': 'Q',
+      'ar': 'R', 'are': 'R',
+      'es': 'S', 'ess': 'S',
+      'tee': 'T', 'tea': 'T',
+      'you': 'U', 'u': 'U',
+      'vee': 'V',
+      'double u': 'W', 'double-u': 'W', 'w': 'W',
+      'ex': 'X',
+      'why': 'Y', 'y': 'Y',
+      'zee': 'Z', 'zed': 'Z',
+    };
+
+    if (spokenMap[text]) return spokenMap[text];
+
+    return null;
+  }, []);
+
+  // Show dictation feedback briefly
+  const showDictationFeedback = useCallback((message: string) => {
+    setDictationFeedback(message);
+    dictationFeedbackOpacity.setValue(1);
+    Animated.timing(dictationFeedbackOpacity, {
+      toValue: 0,
+      duration: 500,
+      delay: 1500,
+      useNativeDriver: true,
+    }).start(() => {
+      setDictationFeedback(null);
+    });
+  }, [dictationFeedbackOpacity]);
+
+  // Start or stop voice dictation
+  const handleDictate = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        'Not Available',
+        'Voice dictation is only available on web',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // If already dictating, stop
+    if (isDictating) {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      }
+      setIsDictating(false);
+      return;
+    }
+
+    // Check browser support
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      Alert.alert(
+        'Not Supported',
+        'Your browser does not support speech recognition. Try Chrome or Edge.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      const letter = mapSpokenToLetter(transcript);
+
+      if (letter) {
+        setLetterSequence((prev) => prev + letter.toLowerCase());
+        showDictationFeedback(`Heard: ${letter} ✓`);
+      } else {
+        showDictationFeedback("Couldn't hear that, try again");
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error === 'aborted') return;
+      showDictationFeedback("Couldn't hear that, try again");
+    };
+
+    recognition.onend = () => {
+      // Auto-restart if still in dictation mode
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch {
+          // Recognition may have been aborted
+          setIsDictating(false);
+          recognitionRef.current = null;
+        }
+      }
+    };
+
+    recognitionRef.current = recognition;
+    setIsDictating(true);
+
+    try {
+      recognition.start();
+    } catch {
+      setIsDictating(false);
+      recognitionRef.current = null;
+      showDictationFeedback("Couldn't start listening");
+    }
+  }, [isDictating, mapSpokenToLetter, showDictationFeedback]);
+
+  // Clean up recognition on unmount or mode switch
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
+
+  // Stop dictation when switching away from letter-by-letter mode
+  useEffect(() => {
+    if (inputMode !== 'letter-by-letter' && isDictating) {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+        recognitionRef.current = null;
+      }
+      setIsDictating(false);
+    }
+  }, [inputMode, isDictating]);
 
   // Show a brief fallback notification that fades after 2 seconds
   const showFallbackNotice = useCallback((message: string) => {
@@ -475,14 +639,29 @@ export default function TestScreen() {
 
             {/* Dictate button — speak letters */}
             <TouchableOpacity
-              style={styles.dictateButton}
-              onPress={() => {/* Voice dictation — to be implemented */}}
+              style={[
+                styles.dictateButton,
+                isDictating && styles.dictateButtonListening,
+              ]}
+              onPress={handleDictate}
               accessibilityRole="button"
-              accessibilityLabel="Dictate letters by speaking"
+              accessibilityLabel={isDictating ? "Stop dictation" : "Dictate letters by speaking"}
               testID="dictate-button"
             >
-              <Text style={styles.dictateButtonText}>🎤 Dictate</Text>
+              <Text style={styles.dictateButtonText}>
+                {isDictating ? '🛑 Stop' : '🎤 Dictate'}
+              </Text>
             </TouchableOpacity>
+
+            {/* Dictation feedback */}
+            {dictationFeedback && (
+              <Animated.View
+                style={[styles.dictationFeedbackContainer, { opacity: dictationFeedbackOpacity }]}
+                testID="dictation-feedback"
+              >
+                <Text style={styles.dictationFeedbackText}>{dictationFeedback}</Text>
+              </Animated.View>
+            )}
 
             <TouchableOpacity
               style={[
@@ -685,6 +864,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  dictateButtonListening: {
+    backgroundColor: '#D32F2F',
+    shadowColor: '#D32F2F',
+  },
   dictateButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -721,6 +904,20 @@ const styles = StyleSheet.create({
   },
   encouragementText: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#2E7D32',
+    textAlign: 'center',
+  },
+  dictationFeedbackContainer: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  dictationFeedbackText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#2E7D32',
     textAlign: 'center',

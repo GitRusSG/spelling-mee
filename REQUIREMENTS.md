@@ -218,7 +218,7 @@ As a Child, I want the app to listen to my voice when I choose voice mode.
 1. Request microphone permission when voice-letter mode is selected
 2. Show kid-friendly message with retry button if permission is denied
 3. Initialize and begin listening within 1 second of permission grant
-4. Support both web (Web Speech API) and native mobile platforms
+4. Support both web (Web Speech API) and native mobile platforms — **Web Speech API implemented on web browsers**
 5. Hide voice-letter mode option if platform doesn't support speech recognition
 
 ---
