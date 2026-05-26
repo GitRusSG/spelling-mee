@@ -681,6 +681,8 @@ export default function TestScreen() {
               testID="answer-input"
               accessibilityLabel="Type your spelling answer"
               editable={status === 'active' && !feedback}
+              onSubmitEditing={() => { if (answer.trim() && !feedback) handleSubmit(); }}
+              returnKeyType="done"
             />
 
             <TouchableOpacity

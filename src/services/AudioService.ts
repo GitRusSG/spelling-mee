@@ -63,11 +63,14 @@ async function playWithVoiceProfile(word: string, profile: VoiceProfile): Promis
       }
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-GB';
-      utterance.rate = profile.speed;
+      utterance.rate = profile.speed * 0.85; // Slightly slower for clarity
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();
-      const selectedVoice = voices.find(v => v.voiceURI === profile.voiceId);
+      // Try exact match first, then fall back to Google voices
+      const selectedVoice = voices.find(v => v.voiceURI === profile.voiceId)
+        || voices.find(v => v.name === profile.voiceId)
+        || voices.find(v => v.name.includes('Google') && v.lang.startsWith('en'));
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
@@ -91,7 +94,8 @@ async function playWithVoiceProfile(word: string, profile: VoiceProfile): Promis
 }
 
 /**
- * Falls back to default text-to-speech using British English female voice.
+ * Falls back to default text-to-speech using Google's high-quality voice.
+ * Prioritizes Google voices (same quality as Google Translate).
  */
 async function playWithDefaultTTS(word: string): Promise<void> {
   if (Platform.OS === 'web') {
@@ -100,22 +104,44 @@ async function playWithDefaultTTS(word: string): Promise<void> {
         reject(new Error('Web Speech API not supported'));
         return;
       }
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = 'en-GB';
-      utterance.rate = 0.65;
-      utterance.pitch = 1.0;
 
+      // Ensure voices are loaded (Chrome loads them async)
+      const attemptSpeak = () => {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-GB';
+        utterance.rate = 0.75;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+
+        // Priority: Google voices (Google Translate quality)
+        const googleVoice = voices.find(v => v.name.includes('Google UK English Female'))
+          || voices.find(v => v.name.includes('Google UK English'))
+          || voices.find(v => v.name.includes('Google') && v.lang.startsWith('en'))
+          || voices.find(v => v.lang === 'en-GB' && v.name.includes('Female'))
+          || voices.find(v => v.lang === 'en-GB')
+          || voices.find(v => v.lang.startsWith('en'));
+
+        if (googleVoice) {
+          utterance.voice = googleVoice;
+        }
+
+        utterance.onend = () => resolve();
+        utterance.onerror = (e) => reject(e);
+        window.speechSynthesis.speak(utterance);
+      };
+
+      // Chrome sometimes needs a moment to load voices
       const voices = window.speechSynthesis.getVoices();
-      const enGBVoice = voices.find(v => v.lang === 'en-GB' && v.name.includes('Female'))
-        || voices.find(v => v.lang === 'en-GB')
-        || voices.find(v => v.lang.startsWith('en'));
-      if (enGBVoice) {
-        utterance.voice = enGBVoice;
+      if (voices.length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          attemptSpeak();
+        };
+        // Fallback timeout in case event never fires
+        setTimeout(attemptSpeak, 100);
+      } else {
+        attemptSpeak();
       }
-
-      utterance.onend = () => resolve();
-      utterance.onerror = (e) => reject(e);
-      window.speechSynthesis.speak(utterance);
     });
   }
 
