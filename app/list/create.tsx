@@ -78,7 +78,7 @@ function CreateListForm() {
 
     setIsSaving(true);
     try {
-      // Save the list locally first
+      // Save the list locally first (this is fast)
       const listData = {
         name: name.trim(),
         type: 'custom' as const,
@@ -89,27 +89,22 @@ function CreateListForm() {
 
       saveCustomList(listData);
 
-      // Publish to community library
-      const now = new Date().toISOString();
-      const savedList = {
-        ...listData,
-        id: '', // Will be set by the repository
-        createdAt: now,
-        updatedAt: now,
-      };
+      // Navigate immediately
+      router.replace('/');
 
-      // Use publishList to share with community
-      await publishList(
+      // Publish to community in background (fire-and-forget)
+      const now = new Date().toISOString();
+      publishList(
         {
-          ...savedList,
-          id: savedList.id || 'temp',
+          ...listData,
+          id: 'temp',
           createdAt: now,
           updatedAt: now,
         },
         agreementAccepted
-      );
-
-      router.replace('/');
+      ).catch(() => {
+        // Silent failure — list is saved locally regardless
+      });
     } catch (error) {
       if (error instanceof ValidationError) {
         if (error.field === 'name') {

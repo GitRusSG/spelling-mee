@@ -134,15 +134,16 @@ export default function TestScreen() {
 
   // Map spoken text to a single letter A-Z
   const mapSpokenToLetter = useCallback((spoken: string): string | null => {
-    const text = spoken.trim().toLowerCase();
+    // Strip punctuation and extra spaces from the transcript
+    const cleaned = spoken.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
 
     // Direct single letter match
-    if (/^[a-z]$/.test(text)) return text.toUpperCase();
+    if (/^[a-z]$/.test(cleaned)) return cleaned.toUpperCase();
 
     // Common spoken forms of letters (expanded for better recognition)
     const spokenMap: Record<string, string> = {
       // A
-      'ay': 'A', 'a': 'A', 'hey': 'A', 'eh': 'A', 'aye': 'A',
+      'ay': 'A', 'a': 'A', 'hey': 'A', 'eh': 'A', 'aye': 'A', 'eight': 'A',
       // B
       'bee': 'B', 'be': 'B', 'b': 'B', 'bea': 'B',
       // C
@@ -152,13 +153,13 @@ export default function TestScreen() {
       // E
       'ee': 'E', 'e': 'E',
       // F
-      'ef': 'F', 'eff': 'F', 'f': 'F', 'if': 'F',
+      'ef': 'F', 'eff': 'F', 'f': 'F', 'if': 'F', 'four': 'F',
       // G
       'gee': 'G', 'g': 'G', 'ge': 'G', 'ji': 'G',
       // H
-      'aitch': 'H', 'h': 'H', 'age': 'H', 'ach': 'H', 'each': 'H', 'ache': 'H', 'eight': 'H',
+      'aitch': 'H', 'h': 'H', 'age': 'H', 'ach': 'H', 'each': 'H', 'ache': 'H',
       // I
-      'eye': 'I', 'i': 'I', 'ai': 'I',
+      'eye': 'I', 'i': 'I', 'ai': 'I', 'aye': 'I',
       // J
       'jay': 'J', 'j': 'J', 'je': 'J', 'jae': 'J',
       // K
@@ -180,13 +181,13 @@ export default function TestScreen() {
       // S
       'es': 'S', 'ess': 'S', 's': 'S', 'as': 'S', 'ass': 'S',
       // T
-      'tee': 'T', 'tea': 'T', 't': 'T', 'te': 'T',
+      'tee': 'T', 'tea': 'T', 't': 'T', 'te': 'T', 'two': 'T',
       // U
       'you': 'U', 'u': 'U', 'yu': 'U', 'ew': 'U',
       // V
       'vee': 'V', 'v': 'V', 've': 'V', 'we': 'V',
       // W
-      'double u': 'W', 'double-u': 'W', 'w': 'W', 'double you': 'W', 'doubleyou': 'W',
+      'double u': 'W', 'double-u': 'W', 'w': 'W', 'double you': 'W', 'doubleyou': 'W', 'double': 'W', 'one': 'W',
       // X
       'ex': 'X', 'x': 'X', 'eggs': 'X',
       // Y
@@ -195,15 +196,32 @@ export default function TestScreen() {
       'zee': 'Z', 'zed': 'Z', 'z': 'Z', 'said': 'Z', 'set': 'Z',
     };
 
-    if (spokenMap[text]) return spokenMap[text];
+    // Try the full cleaned text first
+    if (spokenMap[cleaned]) return spokenMap[cleaned];
+
+    // If the transcript contains multiple words, try each word individually
+    const words = cleaned.split(' ');
+    if (words.length > 1) {
+      for (const word of words) {
+        if (spokenMap[word]) return spokenMap[word];
+      }
+    }
 
     // Fallback: if the speech result starts with a single letter followed by common suffixes, extract it
-    const firstLetterMatch = text.match(/^([a-z])\s/);
-    if (firstLetterMatch) return firstLetterMatch[1].toUpperCase();
+    const firstLetterMatch = cleaned.match(/^([a-z])\s/);
+    if (firstLetterMatch) {
+      // Check if the first character matches a letter in the spoken map values
+      const firstChar = firstLetterMatch[1].toUpperCase();
+      const mapValues = Object.values(spokenMap);
+      if (mapValues.includes(firstChar)) {
+        return firstChar;
+      }
+      return firstChar;
+    }
 
     // Last resort: just take the first character if it's a letter
-    if (text.length > 0 && /^[a-z]/.test(text)) {
-      return text[0].toUpperCase();
+    if (cleaned.length > 0 && /^[a-z]/.test(cleaned)) {
+      return cleaned[0].toUpperCase();
     }
 
     return null;
@@ -511,16 +529,17 @@ export default function TestScreen() {
     setAnswer('');
     setLetterSequence('');
 
-    // Play next word after a brief delay (if not complete)
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < sessionWordList.words.length) {
-      setTimeout(() => {
-        setFeedback(null);
-        setConfettiTrigger(false);
-        playWord(sessionWordList.words[nextIndex]);
-      }, 1500);
-    }
   }, [sessionWordList, currentIndex, answer, letterSequence, inputMode, status, submitAnswer, playWord, streak, totalCorrect, showEncouragement, animateStreakGlow]);
+
+  const handleContinue = useCallback(() => {
+    if (!sessionWordList) return;
+    setFeedback(null);
+    setConfettiTrigger(false);
+    const nextIndex = currentIndex;
+    if (nextIndex < sessionWordList.words.length) {
+      playWord(sessionWordList.words[nextIndex]);
+    }
+  }, [sessionWordList, currentIndex, playWord]);
 
   const handleLetterPress = useCallback((letter: string) => {
     setLetterSequence((prev) => prev + letter.toLowerCase());
@@ -656,6 +675,18 @@ export default function TestScreen() {
         </View>
       )}
 
+      {feedback && status !== 'complete' && (
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={handleContinue}
+          testID="continue-button"
+          accessibilityRole="button"
+          accessibilityLabel="Continue to next word"
+        >
+          <Text style={styles.continueButtonText}>Continue →</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.inputSection}>
         <TouchableOpacity
           style={styles.modeToggleButton}
@@ -678,6 +709,8 @@ export default function TestScreen() {
               placeholder="Type your answer..."
               autoCapitalize="none"
               autoCorrect={false}
+              spellCheck={false}
+              autoComplete="off"
               testID="answer-input"
               accessibilityLabel="Type your spelling answer"
               editable={status === 'active' && !feedback}
@@ -1085,6 +1118,20 @@ const styles = StyleSheet.create({
   backspaceButtonText: {
     color: '#fff',
     fontSize: 14,
+    fontWeight: '700',
+  },
+  continueButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '700',
   },
 });
