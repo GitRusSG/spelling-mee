@@ -138,37 +138,72 @@ export default function TestScreen() {
     // Direct single letter match
     if (/^[a-z]$/.test(text)) return text.toUpperCase();
 
-    // Common spoken forms of letters
+    // Common spoken forms of letters (expanded for better recognition)
     const spokenMap: Record<string, string> = {
-      'ay': 'A', 'a': 'A',
-      'bee': 'B', 'be': 'B',
-      'see': 'C', 'sea': 'C', 'c': 'C',
-      'dee': 'D',
+      // A
+      'ay': 'A', 'a': 'A', 'hey': 'A', 'eh': 'A', 'aye': 'A',
+      // B
+      'bee': 'B', 'be': 'B', 'b': 'B', 'bea': 'B',
+      // C
+      'see': 'C', 'sea': 'C', 'c': 'C', 'si': 'C', 'cee': 'C',
+      // D
+      'dee': 'D', 'd': 'D', 'de': 'D', 'the': 'D',
+      // E
       'ee': 'E', 'e': 'E',
-      'ef': 'F', 'eff': 'F',
-      'gee': 'G',
-      'aitch': 'H', 'h': 'H',
-      'eye': 'I', 'i': 'I',
-      'jay': 'J',
-      'kay': 'K',
-      'el': 'L', 'ell': 'L',
-      'em': 'M',
-      'en': 'N',
-      'oh': 'O', 'o': 'O',
-      'pee': 'P',
-      'cue': 'Q', 'queue': 'Q',
-      'ar': 'R', 'are': 'R',
-      'es': 'S', 'ess': 'S',
-      'tee': 'T', 'tea': 'T',
-      'you': 'U', 'u': 'U',
-      'vee': 'V',
-      'double u': 'W', 'double-u': 'W', 'w': 'W',
-      'ex': 'X',
-      'why': 'Y', 'y': 'Y',
-      'zee': 'Z', 'zed': 'Z',
+      // F
+      'ef': 'F', 'eff': 'F', 'f': 'F', 'if': 'F',
+      // G
+      'gee': 'G', 'g': 'G', 'ge': 'G', 'ji': 'G',
+      // H
+      'aitch': 'H', 'h': 'H', 'age': 'H', 'ach': 'H', 'each': 'H', 'ache': 'H', 'eight': 'H',
+      // I
+      'eye': 'I', 'i': 'I', 'ai': 'I',
+      // J
+      'jay': 'J', 'j': 'J', 'je': 'J', 'jae': 'J',
+      // K
+      'kay': 'K', 'k': 'K', 'ca': 'K', 'ke': 'K', 'okay': 'K',
+      // L
+      'el': 'L', 'ell': 'L', 'l': 'L', 'ale': 'L',
+      // M
+      'em': 'M', 'm': 'M', 'am': 'M',
+      // N
+      'en': 'N', 'n': 'N', 'an': 'N', 'and': 'N',
+      // O
+      'oh': 'O', 'o': 'O', 'owe': 'O',
+      // P
+      'pee': 'P', 'p': 'P', 'pe': 'P',
+      // Q
+      'cue': 'Q', 'queue': 'Q', 'q': 'Q', 'cu': 'Q', 'que': 'Q',
+      // R
+      'ar': 'R', 'are': 'R', 'r': 'R', 'our': 'R',
+      // S
+      'es': 'S', 'ess': 'S', 's': 'S', 'as': 'S', 'ass': 'S',
+      // T
+      'tee': 'T', 'tea': 'T', 't': 'T', 'te': 'T',
+      // U
+      'you': 'U', 'u': 'U', 'yu': 'U', 'ew': 'U',
+      // V
+      'vee': 'V', 'v': 'V', 've': 'V', 'we': 'V',
+      // W
+      'double u': 'W', 'double-u': 'W', 'w': 'W', 'double you': 'W', 'doubleyou': 'W',
+      // X
+      'ex': 'X', 'x': 'X', 'eggs': 'X',
+      // Y
+      'why': 'Y', 'y': 'Y', 'wie': 'Y', 'wye': 'Y',
+      // Z
+      'zee': 'Z', 'zed': 'Z', 'z': 'Z', 'said': 'Z', 'set': 'Z',
     };
 
     if (spokenMap[text]) return spokenMap[text];
+
+    // Fallback: if the speech result starts with a single letter followed by common suffixes, extract it
+    const firstLetterMatch = text.match(/^([a-z])\s/);
+    if (firstLetterMatch) return firstLetterMatch[1].toUpperCase();
+
+    // Last resort: just take the first character if it's a letter
+    if (text.length > 0 && /^[a-z]/.test(text)) {
+      return text[0].toUpperCase();
+    }
 
     return null;
   }, []);
@@ -233,9 +268,9 @@ export default function TestScreen() {
 
       if (letter) {
         setLetterSequence((prev) => prev + letter.toLowerCase());
-        showDictationFeedback(`Heard: ${letter} ✓`);
+        showDictationFeedback(`Heard "${transcript}" → ${letter} ✓`);
       } else {
-        showDictationFeedback("Couldn't hear that, try again");
+        showDictationFeedback(`Heard "${transcript}" — say a letter!`);
       }
     };
 
