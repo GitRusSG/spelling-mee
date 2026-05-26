@@ -102,7 +102,7 @@ async function playWithDefaultTTS(word: string): Promise<void> {
       }
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-GB';
-      utterance.rate = 0.85;
+      utterance.rate = 0.65;
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();

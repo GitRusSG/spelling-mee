@@ -6,9 +6,9 @@ interface ConfettiAnimationProps {
   intensity: 'small' | 'large';
 }
 
-const COLORS = ['#7C4DFF', '#FF6D00', '#00C853', '#E91E63', '#CE93D8', '#FFD600'];
+// Bee-themed colors: honey gold, purple, orange, green, pink
+const COLORS = ['#FFD600', '#7C4DFF', '#FF6D00', '#00C853', '#E91E63', '#CE93D8', '#FFC107', '#4A148C'];
 
-// On web, useNativeDriver doesn't support transforms
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 interface Particle {
@@ -16,9 +16,10 @@ interface Particle {
   y: Animated.Value;
   rotation: Animated.Value;
   opacity: Animated.Value;
+  scale: Animated.Value;
   color: string;
   size: number;
-  isCircle: boolean;
+  shape: 'pentagon' | 'hexagon' | 'circle';
   startX: number;
 }
 
@@ -33,6 +34,8 @@ function getScreenDimensions() {
 function createParticles(count: number): Particle[] {
   const { width } = getScreenDimensions();
   const particles: Particle[] = [];
+  const shapes: Array<'pentagon' | 'hexagon' | 'circle'> = ['pentagon', 'hexagon', 'hexagon', 'pentagon', 'circle'];
+
   for (let i = 0; i < count; i++) {
     const startX = Math.random() * width;
     particles.push({
@@ -40,17 +43,40 @@ function createParticles(count: number): Particle[] {
       y: new Animated.Value(0),
       rotation: new Animated.Value(0),
       opacity: new Animated.Value(1),
+      scale: new Animated.Value(0.3),
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      size: 6 + Math.random() * 8,
-      isCircle: Math.random() > 0.5,
+      size: 8 + Math.random() * 12,
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
       startX,
     });
   }
   return particles;
 }
 
+/**
+ * Creates a CSS clip-path style for pentagon/hexagon shapes.
+ * On web, we use borderRadius tricks to approximate the shapes.
+ */
+function getShapeStyle(shape: 'pentagon' | 'hexagon' | 'circle', size: number) {
+  if (shape === 'circle') {
+    return { borderRadius: size / 2 };
+  }
+  if (shape === 'hexagon') {
+    // Approximate hexagon with high borderRadius
+    return { borderRadius: size / 4 };
+  }
+  // Pentagon — use a slightly different borderRadius per corner
+  return {
+    borderTopLeftRadius: size / 3,
+    borderTopRightRadius: size / 3,
+    borderBottomLeftRadius: size / 6,
+    borderBottomRightRadius: size / 6,
+  };
+}
+
 export default function ConfettiAnimation({ trigger, intensity }: ConfettiAnimationProps) {
-  const particleCount = intensity === 'large' ? 30 : 15;
+  // More particles! small=25, large=50
+  const particleCount = intensity === 'large' ? 50 : 25;
   const [particles, setParticles] = useState<Particle[]>([]);
   const [visible, setVisible] = useState(false);
   const animatingRef = useRef(false);
@@ -66,12 +92,12 @@ export default function ConfettiAnimation({ trigger, intensity }: ConfettiAnimat
     setVisible(true);
 
     const animations = newParticles.map((particle) => {
-      const duration = 1000 + Math.random() * 1000;
-      const horizontalDrift = (Math.random() - 0.5) * 100;
+      const duration = 1200 + Math.random() * 1200; // 1.2-2.4 seconds
+      const horizontalDrift = (Math.random() - 0.5) * 150;
 
       return Animated.parallel([
         Animated.timing(particle.y, {
-          toValue: height * 0.6,
+          toValue: height * 0.8,
           duration,
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
@@ -81,14 +107,19 @@ export default function ConfettiAnimation({ trigger, intensity }: ConfettiAnimat
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.timing(particle.rotation, {
-          toValue: Math.random() * 720 - 360,
+          toValue: Math.random() * 1080 - 540,
           duration,
+          useNativeDriver: USE_NATIVE_DRIVER,
+        }),
+        Animated.timing(particle.scale, {
+          toValue: 0.8 + Math.random() * 0.5,
+          duration: duration * 0.3,
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.timing(particle.opacity, {
           toValue: 0,
           duration,
-          delay: duration * 0.5,
+          delay: duration * 0.6,
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]);
@@ -106,8 +137,8 @@ export default function ConfettiAnimation({ trigger, intensity }: ConfettiAnimat
     <View style={styles.container} pointerEvents="none" testID="confetti-container">
       {particles.map((particle, index) => {
         const rotation = particle.rotation.interpolate({
-          inputRange: [-360, 360],
-          outputRange: ['-360deg', '360deg'],
+          inputRange: [-540, 540],
+          outputRange: ['-540deg', '540deg'],
         });
 
         return (
@@ -119,13 +150,14 @@ export default function ConfettiAnimation({ trigger, intensity }: ConfettiAnimat
                 width: particle.size,
                 height: particle.size,
                 backgroundColor: particle.color,
-                borderRadius: particle.isCircle ? particle.size / 2 : 2,
+                ...getShapeStyle(particle.shape, particle.size),
                 left: particle.startX,
                 opacity: particle.opacity,
                 transform: [
                   { translateX: particle.x },
                   { translateY: particle.y },
                   { rotate: rotation },
+                  { scale: particle.scale },
                 ],
               },
             ]}
@@ -148,6 +180,6 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    top: -10,
+    top: -15,
   },
 });

@@ -215,9 +215,9 @@ export default function TestScreen() {
     dictationFeedbackOpacity.setValue(1);
     Animated.timing(dictationFeedbackOpacity, {
       toValue: 0,
-      duration: 500,
-      delay: 1500,
-      useNativeDriver: true,
+      duration: 300,
+      delay: 800,
+      useNativeDriver: Platform.OS !== 'web' ? true : false,
     }).start(() => {
       setDictationFeedback(null);
     });
