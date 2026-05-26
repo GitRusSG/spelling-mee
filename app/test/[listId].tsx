@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTestSession } from '../../src/contexts/TestSessionContext';
@@ -139,9 +140,10 @@ export default function TestScreen() {
     });
   }, [fallbackOpacity]);
 
-  // Look up dictation URL for a word
+  // Look up dictation URL for a word — skip if no user or on web (too slow)
   const getDictationUrl = useCallback(async (word: string): Promise<string | null> => {
-    if (!user?.uid) return null;
+    // Skip dictation lookup on web or when not authenticated — go straight to TTS
+    if (!user?.uid || Platform.OS === 'web') return null;
     try {
       return await DictationStorageService.getDownloadUrl(user.uid, listId, word);
     } catch {
