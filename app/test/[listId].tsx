@@ -424,10 +424,10 @@ export default function TestScreen() {
           onPress={handleModeToggle}
           testID="mode-toggle-button"
           accessibilityRole="button"
-          accessibilityLabel={`Switch to ${inputMode === 'text' ? 'letter-by-letter' : 'text'} mode`}
+          accessibilityLabel={`Switch to ${inputMode === 'text' ? 'dictation' : 'text'} mode`}
         >
           <Text style={styles.modeToggleText}>
-            {inputMode === 'text' ? '🔤 Switch to Letter Mode' : '⌨️ Switch to Text Mode'}
+            {inputMode === 'text' ? '🔤 Switch to Dictation Mode' : '⌨️ Switch to Text Mode'}
           </Text>
         </TouchableOpacity>
 
