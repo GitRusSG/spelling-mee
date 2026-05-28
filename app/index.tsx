@@ -59,7 +59,19 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>🐝 Spelling Mee</Text>
+        {/* Settings gear — top right */}
+        <View style={styles.topBar}>
+          <Text style={styles.title}>🐝 Spelling Mee</Text>
+          <TouchableOpacity
+            style={styles.settingsGear}
+            onPress={() => router.push('/settings/voice')}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            testID="settings-button"
+          >
+            <Text style={styles.settingsGearText}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Auth Status */}
         <View style={styles.authRow}>
@@ -294,6 +306,31 @@ const styles = StyleSheet.create({
     color: '#4A148C',
     marginBottom: 12,
     textAlign: 'center',
+    flex: 1,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  settingsGear: {
+    position: 'absolute',
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  settingsGearText: {
+    fontSize: 22,
   },
   authRow: {
     alignItems: 'center',
