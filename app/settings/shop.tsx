@@ -140,10 +140,10 @@ export default function ShopScreen() {
 
   const handlePress = (pack: Pack, owned: boolean) => {
     if (owned) {
-      handleEquip(pack);
-    } else {
-      handleBuy(pack);
+      // Do nothing — use the Equip button instead
+      return;
     }
+    handleBuy(pack);
   };
 
   return (
@@ -204,7 +204,13 @@ export default function ShopScreen() {
                 <Text style={styles.packDescription}>{pack.description}</Text>
               </View>
               {owned ? (
-                <Text style={styles.ownedBadge}>✅ Tap to equip</Text>
+                <TouchableOpacity
+                  style={styles.equipButton}
+                  onPress={() => handleEquip(pack)}
+                  testID={`equip-${pack.id}`}
+                >
+                  <Text style={styles.equipButtonText}>Equip ✓</Text>
+                </TouchableOpacity>
               ) : (
                 isSubscribed ? (
                   <View style={styles.discountContainer}>
@@ -237,7 +243,13 @@ export default function ShopScreen() {
                 <Text style={styles.packDescription}>{pack.description}</Text>
               </View>
               {owned ? (
-                <Text style={styles.ownedBadge}>✅ Tap to equip</Text>
+                <TouchableOpacity
+                  style={styles.equipButton}
+                  onPress={() => handleEquip(pack)}
+                  testID={`equip-${pack.id}`}
+                >
+                  <Text style={styles.equipButtonText}>Equip ✓</Text>
+                </TouchableOpacity>
               ) : (
                 isSubscribed ? (
                   <View style={styles.discountContainer}>
@@ -273,6 +285,8 @@ const styles = StyleSheet.create({
   packDescription: { fontSize: 12, color: '#666' },
   packCost: { fontSize: 15, fontWeight: '700', color: '#F57F17', backgroundColor: '#FFF8E1', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, overflow: 'hidden' },
   ownedBadge: { fontSize: 13, fontWeight: '600', color: '#4CAF50' },
+  equipButton: { backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
+  equipButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   discountContainer: { alignItems: 'center' },
   originalCost: { fontSize: 12, color: '#999', textDecorationLine: 'line-through', marginBottom: 2 },
   premiumBanner: { backgroundColor: '#E8F5E9', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, alignSelf: 'center', marginBottom: 16 },
