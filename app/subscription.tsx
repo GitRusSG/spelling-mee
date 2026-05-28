@@ -17,6 +17,7 @@ const PRICE_LABEL = '$2.99/month';
 
 const BENEFITS = [
   { icon: '🚫', text: 'No ads — distraction-free learning' },
+  { icon: '🛒', text: '10% off all shop packs (backgrounds & text styles)' },
   { icon: '❤️', text: 'Support ongoing development' },
   { icon: '⭐', text: 'Help us build new features faster' },
 ];

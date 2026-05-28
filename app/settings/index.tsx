@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { createStorage } from '../../src/services/storage';
@@ -50,6 +50,47 @@ export default function SettingsScreen() {
   const { isAuthenticated, user, signOut } = useAuth();
   const [bgColor, setBgColor] = useState(getStoredColor('app_bg_color', '#F3E5F5'));
   const [textColor, setTextColor] = useState(getStoredColor('app_text_color', '#4A148C'));
+  const [code, setCode] = useState('');
+  const [codeMessage, setCodeMessage] = useState<{ text: string; success: boolean } | null>(null);
+
+  const VALID_CODES: Record<string, number> = {
+    'fedor': 999,
+    'fëdor': 999,
+    'spellingbee': 50,
+    'honeypot': 25,
+  };
+
+  const handleRedeemCode = () => {
+    const trimmed = code.trim().toLowerCase();
+    if (!trimmed) return;
+
+    // Check if already redeemed
+    const storage = createStorage();
+    const redeemedRaw = storage.getString('redeemed_codes') || '[]';
+    const redeemed: string[] = JSON.parse(redeemedRaw);
+
+    if (redeemed.includes(trimmed)) {
+      setCodeMessage({ text: 'Code already redeemed!', success: false });
+      return;
+    }
+
+    const honeyAmount = VALID_CODES[trimmed];
+    if (!honeyAmount) {
+      setCodeMessage({ text: 'Invalid code', success: false });
+      return;
+    }
+
+    // Add honey
+    const currentHoney = parseInt(storage.getString('total_honey') || '0', 10);
+    storage.set('total_honey', String(currentHoney + honeyAmount));
+
+    // Mark as redeemed
+    redeemed.push(trimmed);
+    storage.set('redeemed_codes', JSON.stringify(redeemed));
+
+    setCodeMessage({ text: `🎉 +${honeyAmount} 🍯 added!`, success: true });
+    setCode('');
+  };
 
   const handleBgChange = (color: string) => {
     setBgColor(color);
@@ -131,6 +172,30 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Redeem Code */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>🎁 Redeem Code</Text>
+          <View style={styles.codeRow}>
+            <TextInput
+              style={styles.codeInput}
+              value={code}
+              onChangeText={setCode}
+              placeholder="Enter code..."
+              autoCapitalize="none"
+              autoCorrect={false}
+              testID="code-input"
+            />
+            <TouchableOpacity style={styles.redeemButton} onPress={handleRedeemCode} testID="redeem-button">
+              <Text style={styles.redeemButtonText}>Redeem</Text>
+            </TouchableOpacity>
+          </View>
+          {codeMessage && (
+            <Text style={[styles.codeMessage, codeMessage.success ? styles.codeSuccess : styles.codeError]}>
+              {codeMessage.text}
+            </Text>
+          )}
+        </View>
+
         {/* Voice Settings */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>🗣️ Voice</Text>
@@ -185,4 +250,11 @@ const styles = StyleSheet.create({
   accountEmail: { fontSize: 14, color: '#555', marginBottom: 12 },
   signOutButton: { backgroundColor: '#FFCDD2', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   signOutButtonText: { fontSize: 15, fontWeight: '600', color: '#C62828' },
+  codeRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  codeInput: { flex: 1, backgroundColor: '#F5F5F5', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
+  redeemButton: { backgroundColor: '#FF6D00', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  redeemButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  codeMessage: { marginTop: 8, fontSize: 14, fontWeight: '600' },
+  codeSuccess: { color: '#2E7D32' },
+  codeError: { color: '#C62828' },
 });

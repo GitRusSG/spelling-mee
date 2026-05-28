@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createStorage } from '../../src/services/storage';
+import { useSubscription } from '../../src/contexts/SubscriptionContext';
 
 interface Pack {
   id: string;
@@ -83,27 +84,31 @@ function equipPack(pack: Pack) {
 
 export default function ShopScreen() {
   const router = useRouter();
+  const { isSubscribed } = useSubscription();
   const [unlockedPacks, setUnlockedPacks] = useState<string[]>(getUnlockedPacks());
   const [honey, setHoney] = useState(getTotalHoney());
 
+  const getDiscountedCost = (cost: number) => isSubscribed ? Math.floor(cost * 0.9) : cost;
+
   const handleBuy = (pack: Pack) => {
-    if (honey < pack.cost) {
-      Alert.alert('Not Enough Honey', `You need ${pack.cost} 🍯 but only have ${honey} 🍯. Keep spelling to earn more!`);
+    const cost = getDiscountedCost(pack.cost);
+    if (honey < cost) {
+      Alert.alert('Not Enough Honey', `You need ${cost} 🍯 but only have ${honey} 🍯. Keep spelling to earn more!`);
       return;
     }
 
     Alert.alert(
       'Buy Pack',
-      `Unlock "${pack.name}" for ${pack.cost} 🍯?`,
+      `Unlock "${pack.name}" for ${cost} 🍯?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: `Buy (${pack.cost} 🍯)`,
+          text: `Buy (${cost} 🍯)`,
           onPress: () => {
-            if (spendHoney(pack.cost)) {
+            if (spendHoney(cost)) {
               saveUnlockedPack(pack.id);
               setUnlockedPacks((prev) => [...prev, pack.id]);
-              setHoney((prev) => prev - pack.cost);
+              setHoney((prev) => prev - cost);
               Alert.alert('🎉 Unlocked!', `${pack.name} is now yours! Equip it in Settings.`);
             }
           },
@@ -135,6 +140,12 @@ export default function ShopScreen() {
         <Text style={styles.title}>🛒 Shop</Text>
         <Text style={styles.honeyBalance}>🍯 {honey} honey</Text>
 
+        {isSubscribed && (
+          <View style={styles.premiumBanner}>
+            <Text style={styles.premiumBannerText}>💎 Premium: 10% off all packs!</Text>
+          </View>
+        )}
+
         {/* Background Packs */}
         <Text style={styles.sectionTitle}>🎨 Background Packs</Text>
         <Text style={styles.sectionSubtitle}>Animated backgrounds for your spelling tests!</Text>
@@ -155,7 +166,14 @@ export default function ShopScreen() {
               {owned ? (
                 <Text style={styles.ownedBadge}>✅ Owned</Text>
               ) : (
-                <Text style={styles.packCost}>{pack.cost} 🍯</Text>
+                isSubscribed ? (
+                  <View style={styles.discountContainer}>
+                    <Text style={styles.originalCost}>{pack.cost}</Text>
+                    <Text style={styles.packCost}>{getDiscountedCost(pack.cost)} 🍯</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.packCost}>{pack.cost} 🍯</Text>
+                )
               )}
             </TouchableOpacity>
           );
@@ -181,7 +199,14 @@ export default function ShopScreen() {
               {owned ? (
                 <Text style={styles.ownedBadge}>✅ Owned</Text>
               ) : (
-                <Text style={styles.packCost}>{pack.cost} 🍯</Text>
+                isSubscribed ? (
+                  <View style={styles.discountContainer}>
+                    <Text style={styles.originalCost}>{pack.cost}</Text>
+                    <Text style={styles.packCost}>{getDiscountedCost(pack.cost)} 🍯</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.packCost}>{pack.cost} 🍯</Text>
+                )
               )}
             </TouchableOpacity>
           );
@@ -208,4 +233,8 @@ const styles = StyleSheet.create({
   packDescription: { fontSize: 12, color: '#666' },
   packCost: { fontSize: 15, fontWeight: '700', color: '#F57F17', backgroundColor: '#FFF8E1', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, overflow: 'hidden' },
   ownedBadge: { fontSize: 13, fontWeight: '600', color: '#4CAF50' },
+  discountContainer: { alignItems: 'center' },
+  originalCost: { fontSize: 12, color: '#999', textDecorationLine: 'line-through', marginBottom: 2 },
+  premiumBanner: { backgroundColor: '#E8F5E9', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, alignSelf: 'center', marginBottom: 16 },
+  premiumBannerText: { fontSize: 13, fontWeight: '600', color: '#2E7D32' },
 });
