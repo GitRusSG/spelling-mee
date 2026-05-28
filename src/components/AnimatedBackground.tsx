@@ -19,6 +19,7 @@ interface FloatingItem {
 export default function AnimatedBackground() {
   const [packId, setPackId] = useState<string | null>(null);
   const [items, setItems] = useState<FloatingItem[]>([]);
+  const waterLineY = useState(() => new Animated.Value(0))[0];
 
   useEffect(() => {
     const checkPack = () => {
@@ -120,7 +121,7 @@ export default function AnimatedBackground() {
     setItems(newItems);
 
     // Animate based on pack type
-    newItems.forEach((item) => {
+    newItems.forEach((item, i) => {
       switch (packId) {
         case 'bg-ocean': {
           if (item.layer === 'top') {
@@ -128,9 +129,14 @@ export default function AnimatedBackground() {
             const animate = () => { item.y.setValue(-40); Animated.timing(item.y, { toValue: SCREEN_HEIGHT * 0.42, duration: 6000 + Math.random() * 3000, useNativeDriver: USE_NATIVE_DRIVER, delay: item.delay }).start(() => { item.delay = 0; animate(); }); };
             animate();
           } else if (item.layer === 'middle') {
-            // Waves bob
+            // Waves bob — also animate the water line
             const animate = () => { Animated.sequence([Animated.timing(item.y, { toValue: -8, duration: 1500, useNativeDriver: USE_NATIVE_DRIVER, delay: item.delay }), Animated.timing(item.y, { toValue: 8, duration: 1500, useNativeDriver: USE_NATIVE_DRIVER })]).start(() => { item.delay = 0; animate(); }); };
             animate();
+            // Sync water line with first wave item
+            if (i === newItems.findIndex(it => it.layer === 'middle')) {
+              const animateWater = () => { Animated.sequence([Animated.timing(waterLineY, { toValue: -8, duration: 1500, useNativeDriver: false, delay: item.delay }), Animated.timing(waterLineY, { toValue: 8, duration: 1500, useNativeDriver: false })]).start(() => { animateWater(); }); };
+              animateWater();
+            }
           } else {
             // Fish drift up and down
             const baseOffset = Math.random() * 30;
@@ -198,7 +204,7 @@ export default function AnimatedBackground() {
       }
     });
 
-    return () => newItems.forEach(item => item.y.stopAnimation());
+    return () => { newItems.forEach(item => item.y.stopAnimation()); waterLineY.stopAnimation(); };
   }, [packId]);
 
   if (!packId || items.length === 0) return null;
@@ -208,8 +214,10 @@ export default function AnimatedBackground() {
 
   return (
     <View style={styles.container} pointerEvents="none" testID="animated-background">
-      {/* Ocean: blue bottom half starting at wave line */}
-      {isOcean && <View style={styles.oceanWater} />}
+      {/* Ocean: blue water following the wave line */}
+      {isOcean && (
+        <Animated.View style={[styles.oceanWater, { transform: [{ translateY: waterLineY }] }]} />
+      )}
       {/* Forest: green ground at bottom */}
       {isForest && <View style={styles.forestGround} />}
 
