@@ -564,6 +564,9 @@ export default function TestScreen() {
     playButtonClickSound();
     setFeedback(null);
     setConfettiTrigger(false);
+    setDrawLetterCount(0);
+    setLetterSequence('');
+    setAnswer('');
     const nextIndex = currentIndex;
     if (nextIndex < sessionWordList.words.length) {
       playWord(sessionWordList.words[nextIndex]);

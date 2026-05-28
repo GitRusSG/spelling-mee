@@ -113,6 +113,19 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     onClear();
   };
 
+  // Similar letters that could be confused in handwriting
+  const SIMILAR_LETTERS: Record<string, string[]> = {
+    'A': ['H', 'R', 'N'], 'B': ['D', 'P', 'R'], 'C': ['G', 'O', 'U'],
+    'D': ['B', 'O', 'P'], 'E': ['F', 'L', 'B'], 'F': ['E', 'P', 'T'],
+    'G': ['C', 'Q', 'O'], 'H': ['N', 'M', 'A'], 'I': ['L', 'T', 'J'],
+    'J': ['I', 'U', 'G'], 'K': ['R', 'X', 'H'], 'L': ['I', 'T', 'E'],
+    'M': ['N', 'W', 'H'], 'N': ['M', 'H', 'U'], 'O': ['Q', 'C', 'D'],
+    'P': ['B', 'D', 'R'], 'Q': ['O', 'G', 'D'], 'R': ['P', 'B', 'K'],
+    'S': ['Z', '5', 'C'], 'T': ['I', 'L', 'F'], 'U': ['V', 'N', 'J'],
+    'V': ['U', 'W', 'Y'], 'W': ['M', 'V', 'N'], 'X': ['K', 'Y', 'Z'],
+    'Y': ['V', 'X', 'T'], 'Z': ['S', '2', 'N'],
+  };
+
   const handleRecognize = async () => {
     if (!canvasRef.current) return;
     setIsRecognizing(true);
@@ -226,7 +239,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
         </TouchableOpacity>
       </View>
 
-      {/* Recognition result */}
+      {/* Recognition result with alternatives */}
       {recognizedLetter && (
         <View style={styles.recognitionResult} testID="recognition-result">
           <Text style={styles.recognitionLabel}>I think you drew:</Text>
@@ -239,6 +252,27 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
               <Text style={styles.rejectButtonText}>✗ No</Text>
             </TouchableOpacity>
           </View>
+          {/* Show similar alternatives */}
+          {SIMILAR_LETTERS[recognizedLetter] && (
+            <View style={styles.alternativesContainer}>
+              <Text style={styles.alternativesLabel}>Or did you mean:</Text>
+              <View style={styles.alternativesRow}>
+                {SIMILAR_LETTERS[recognizedLetter].map((alt) => (
+                  <TouchableOpacity
+                    key={alt}
+                    style={styles.alternativeButton}
+                    onPress={() => {
+                      onLetterConfirmed(alt.toLowerCase());
+                      clearForNext();
+                    }}
+                    testID={`alt-letter-${alt}`}
+                  >
+                    <Text style={styles.alternativeButtonText}>{alt}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
       )}
 
@@ -376,6 +410,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  alternativesContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#C8E6C9',
+    alignItems: 'center',
+    width: '100%',
+  },
+  alternativesLabel: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 8,
+  },
+  alternativesRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  alternativeButton: {
+    backgroundColor: '#EDE7F6',
+    borderRadius: 10,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#CE93D8',
+  },
+  alternativeButtonText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#7C4DFF',
   },
   letterPickerContainer: {
     backgroundColor: '#EDE7F6',
