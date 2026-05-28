@@ -19,6 +19,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
   const [hasDrawn, setHasDrawn] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognizedLetter, setRecognizedLetter] = useState<string | null>(null);
+  const [ocrAlternatives, setOcrAlternatives] = useState<string[]>([]);
   const [showManualPicker, setShowManualPicker] = useState(false);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -113,23 +114,11 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     onClear();
   };
 
-  // Similar letters that could be confused in handwriting
-  const SIMILAR_LETTERS: Record<string, string[]> = {
-    'A': ['H', 'R', 'N'], 'B': ['D', 'P', 'R'], 'C': ['G', 'O', 'U'],
-    'D': ['B', 'O', 'P'], 'E': ['F', 'L', 'B'], 'F': ['E', 'P', 'T'],
-    'G': ['C', 'Q', 'O'], 'H': ['N', 'M', 'A'], 'I': ['L', 'T', 'J'],
-    'J': ['I', 'U', 'G'], 'K': ['R', 'X', 'H'], 'L': ['I', 'T', 'E'],
-    'M': ['N', 'W', 'H'], 'N': ['M', 'H', 'U'], 'O': ['Q', 'C', 'D'],
-    'P': ['B', 'D', 'R'], 'Q': ['O', 'G', 'D'], 'R': ['P', 'B', 'K'],
-    'S': ['Z', '5', 'C'], 'T': ['I', 'L', 'F'], 'U': ['V', 'N', 'J'],
-    'V': ['U', 'W', 'Y'], 'W': ['M', 'V', 'N'], 'X': ['K', 'Y', 'Z'],
-    'Y': ['V', 'X', 'T'], 'Z': ['S', '2', 'N'],
-  };
-
   const handleRecognize = async () => {
     if (!canvasRef.current) return;
     setIsRecognizing(true);
     setRecognizedLetter(null);
+    setShowManualPicker(false);
 
     try {
       const Tesseract = await import('tesseract.js');
@@ -141,16 +130,24 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
       });
 
       const text = result.data.text.trim().toUpperCase();
-      // Extract first letter character from the result
-      const match = text.match(/[A-Z]/);
-      if (match) {
-        setRecognizedLetter(match[0]);
+      // Extract ALL letter characters from the result
+      const allLetters = text.match(/[A-Z]/g) || [];
+      // Deduplicate
+      const uniqueLetters = [...new Set(allLetters)];
+
+      if (uniqueLetters.length === 1) {
+        // High confidence — single clear result
+        setRecognizedLetter(uniqueLetters[0]);
+      } else if (uniqueLetters.length >= 2) {
+        // Multiple possibilities — show them as options (no full grid)
+        setRecognizedLetter(uniqueLetters[0]);
+        // Store alternatives from OCR result
+        setOcrAlternatives(uniqueLetters.slice(0, 4));
       } else {
-        // OCR couldn't recognize — show manual picker
+        // OCR couldn't recognize anything — show manual picker
         setShowManualPicker(true);
       }
     } catch {
-      // Fallback to manual picker on error
       setShowManualPicker(true);
     } finally {
       setIsRecognizing(false);
@@ -166,6 +163,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
 
   const handleReject = () => {
     setRecognizedLetter(null);
+    setOcrAlternatives([]);
     setShowManualPicker(true);
   };
 
@@ -184,6 +182,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     }
     setHasDrawn(false);
     setRecognizedLetter(null);
+    setOcrAlternatives([]);
     setShowManualPicker(false);
   };
 
@@ -239,7 +238,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
         </TouchableOpacity>
       </View>
 
-      {/* Recognition result with alternatives */}
+      {/* Recognition result */}
       {recognizedLetter && (
         <View style={styles.recognitionResult} testID="recognition-result">
           <Text style={styles.recognitionLabel}>I think you drew:</Text>
@@ -252,12 +251,12 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
               <Text style={styles.rejectButtonText}>✗ No</Text>
             </TouchableOpacity>
           </View>
-          {/* Show similar alternatives */}
-          {SIMILAR_LETTERS[recognizedLetter] && (
+          {/* Only show alternatives if OCR found multiple possibilities */}
+          {ocrAlternatives.length > 1 && (
             <View style={styles.alternativesContainer}>
-              <Text style={styles.alternativesLabel}>Or did you mean:</Text>
+              <Text style={styles.alternativesLabel}>Could also be:</Text>
               <View style={styles.alternativesRow}>
-                {SIMILAR_LETTERS[recognizedLetter].map((alt) => (
+                {ocrAlternatives.filter(a => a !== recognizedLetter).map((alt) => (
                   <TouchableOpacity
                     key={alt}
                     style={styles.alternativeButton}
