@@ -45,10 +45,16 @@ function CreateListForm() {
       setWordsError('Please remove inappropriate words');
       return;
     }
+    if (trimmed.length < 2 || /\d/.test(trimmed)) {
+      // Still add it but show a brief warning
+      setWordsError('⚠️ This might not be a real word');
+      setTimeout(() => setWordsError(null), 2000);
+    } else {
+      // Clear words error when a word is added
+      if (wordsError) setWordsError(null);
+    }
     setWords((prev) => [...prev, trimmed]);
     setWordInput('');
-    // Clear words error when a word is added
-    if (wordsError) setWordsError(null);
   };
 
   const handleDeleteWord = (index: number) => {

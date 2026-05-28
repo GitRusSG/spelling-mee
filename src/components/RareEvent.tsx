@@ -23,12 +23,11 @@ export default function RareEvent({ trigger }: RareEventProps) {
   const [visible, setVisible] = useState(false);
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.5)).current;
-  const lastTrigger = useRef(false);
+  const triggerCount = useRef(0);
 
   useEffect(() => {
-    if (trigger === lastTrigger.current) return;
-    lastTrigger.current = trigger;
-    if (!trigger) return;
+    triggerCount.current += 1;
+    if (triggerCount.current <= 1) return; // Skip initial mount
 
     // Roll for each event
     for (const event of RARE_EVENTS) {

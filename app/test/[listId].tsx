@@ -8,6 +8,7 @@ import {
   Animated,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTestSession } from '../../src/contexts/TestSessionContext';
@@ -467,6 +468,7 @@ export default function TestScreen() {
   const playWord = useCallback(async (word: string) => {
     setAudioState('loading');
     setAllSourcesFailed(false);
+    const loadingTimeout = setTimeout(() => setAudioState('idle'), 3000);
     try {
       // Look up dictation URL
       const dictationUrl = await getDictationUrl(word);
@@ -479,6 +481,7 @@ export default function TestScreen() {
         voiceProfile,
       });
 
+      clearTimeout(loadingTimeout);
       setAudioSource(result.sourceUsed);
       setAudioState('idle');
 
@@ -487,6 +490,7 @@ export default function TestScreen() {
         showFallbackNotice('Using TTS voice');
       }
     } catch (error) {
+      clearTimeout(loadingTimeout);
       if (error instanceof AudioUnavailableError) {
         setAudioState('error');
         setAllSourcesFailed(true);
@@ -635,11 +639,13 @@ export default function TestScreen() {
     const currentIdx = modeOrder.indexOf(inputMode);
     const newMode = modeOrder[(currentIdx + 1) % modeOrder.length];
     setInputMode(newMode);
-    // Clear current input when switching modes
-    setAnswer('');
-    setLetterSequence('');
-    setDrawLetterCount(0);
-  }, [inputMode]);
+    // Sync answer between modes (keep the text)
+    if (inputMode === 'text' && answer) {
+      setLetterSequence(answer);
+    } else if (inputMode !== 'text' && letterSequence) {
+      setAnswer(letterSequence);
+    }
+  }, [inputMode, answer, letterSequence]);
 
   // Show loading state if word list not found
   if (!sessionWordList && !initialized) {
@@ -663,7 +669,7 @@ export default function TestScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={{flex: 1, backgroundColor: 'transparent'}} contentContainerStyle={styles.container}>
       <AnimatedBackground />
       <InterstitialAd visible={showAd} onClose={handleAdClose} />
       <ConfettiAnimation trigger={confettiTrigger} intensity="small" />
@@ -806,6 +812,17 @@ export default function TestScreen() {
       )}
 
       <View style={styles.inputSection}>
+        <View style={styles.modeIconsRow}>
+          <View style={[styles.modeIcon, inputMode === 'text' && styles.modeIconActive]}>
+            <Text style={styles.modeIconText}>⌨️</Text>
+          </View>
+          <View style={[styles.modeIcon, inputMode === 'letter-by-letter' && styles.modeIconActive]}>
+            <Text style={styles.modeIconText}>🎤</Text>
+          </View>
+          <View style={[styles.modeIcon, inputMode === 'draw' && styles.modeIconActive]}>
+            <Text style={styles.modeIconText}>✏️</Text>
+          </View>
+        </View>
         <TouchableOpacity
           style={styles.modeToggleButton}
           onPress={handleModeToggle}
@@ -850,6 +867,7 @@ export default function TestScreen() {
             </View>
 
             <DrawingCanvas
+              key={`draw-${drawLetterCount}`}
               onLetterConfirmed={(letter) => {
                 setLetterSequence((prev) => prev + letter);
                 setDrawLetterCount((prev) => prev + 1);
@@ -979,17 +997,17 @@ export default function TestScreen() {
           </>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 24,
-    backgroundColor: '#F3E5F5',
+    backgroundColor: 'transparent',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 60,
+    paddingBottom: 100,
   },
   honeyBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#FFF8E1', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#FFC107', zIndex: 10 },
   honeyBadgeText: { fontSize: 14, fontWeight: '700', color: '#F57F17' },
@@ -1170,6 +1188,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#7C4DFF',
     textAlign: 'center',
+  },
+  modeIconsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+    justifyContent: 'center',
+  },
+  modeIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeIconActive: {
+    backgroundColor: '#7C4DFF',
+  },
+  modeIconText: {
+    fontSize: 18,
   },
   letterDisplay: {
     width: '100%',

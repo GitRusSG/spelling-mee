@@ -14,9 +14,13 @@ const blitzHard = require('../../assets/lists/blitz-hard.json');
 
 // Grade folders
 const gradeK1Easy = require('../../assets/lists/grade-k1-easy.json');
+const gradeK1Medium = require('../../assets/lists/grade-k1-medium.json');
 const gradeK2Easy = require('../../assets/lists/grade-k2-easy.json');
+const gradeK2Medium = require('../../assets/lists/grade-k2-medium.json');
 const gradeP1Easy = require('../../assets/lists/grade-p1-easy.json');
+const gradeP1Medium = require('../../assets/lists/grade-p1-medium.json');
 const gradeP2Easy = require('../../assets/lists/grade-p2-easy.json');
+const gradeP2Medium = require('../../assets/lists/grade-p2-medium.json');
 const gradeP3Easy = require('../../assets/lists/grade-p3-easy.json');
 const gradeP4Easy = require('../../assets/lists/grade-p4-easy.json');
 const gradeP5Easy = require('../../assets/lists/grade-p5-easy.json');
@@ -55,6 +59,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       words: gradeK1Easy.words,
       wordCount: gradeK1Easy.wordCount,
     },
+    {
+      id: gradeK1Medium.id,
+      name: gradeK1Medium.name,
+      type: 'builtin',
+      words: gradeK1Medium.words,
+      wordCount: gradeK1Medium.wordCount,
+    },
   ],
   K2: [
     {
@@ -63,6 +74,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       type: 'builtin',
       words: gradeK2Easy.words,
       wordCount: gradeK2Easy.wordCount,
+    },
+    {
+      id: gradeK2Medium.id,
+      name: gradeK2Medium.name,
+      type: 'builtin',
+      words: gradeK2Medium.words,
+      wordCount: gradeK2Medium.wordCount,
     },
   ],
   P1: [
@@ -73,6 +91,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       words: gradeP1Easy.words,
       wordCount: gradeP1Easy.wordCount,
     },
+    {
+      id: gradeP1Medium.id,
+      name: gradeP1Medium.name,
+      type: 'builtin',
+      words: gradeP1Medium.words,
+      wordCount: gradeP1Medium.wordCount,
+    },
   ],
   P2: [
     {
@@ -81,6 +106,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       type: 'builtin',
       words: gradeP2Easy.words,
       wordCount: gradeP2Easy.wordCount,
+    },
+    {
+      id: gradeP2Medium.id,
+      name: gradeP2Medium.name,
+      type: 'builtin',
+      words: gradeP2Medium.words,
+      wordCount: gradeP2Medium.wordCount,
     },
   ],
   P3: [

@@ -272,6 +272,23 @@ export default function HomeScreen() {
           <Text style={styles.voiceSettingsButtonText}>🎙️ Voice Settings</Text>
         </TouchableOpacity>
 
+        {/* Watch Ad for Honey */}
+        <TouchableOpacity
+          style={styles.watchAdButton}
+          onPress={() => {
+            try {
+              const { createStorage } = require('../src/services/storage');
+              const storage = createStorage();
+              const current = parseInt(storage.getString('total_honey') || '0', 10);
+              storage.set('total_honey', String(current + 3));
+            } catch {}
+            if (typeof window !== 'undefined') window.alert('🍯 +3 honey earned!');
+          }}
+          testID="watch-ad-button"
+        >
+          <Text style={styles.watchAdButtonText}>🎬 Watch Ad (+3 🍯)</Text>
+        </TouchableOpacity>
+
         {/* Subscription link */}
         <TouchableOpacity
           style={styles.subscriptionLink}
@@ -479,6 +496,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textDecorationLine: 'underline',
+  },
+  watchAdButton: {
+    backgroundColor: '#FFC107',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  watchAdButtonText: {
+    color: '#333',
+    fontSize: 18,
+    fontWeight: '700',
   },
   customListWrapper: {
     marginBottom: 4,
