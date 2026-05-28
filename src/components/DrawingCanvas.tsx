@@ -63,7 +63,9 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     setIsDrawing(true);
     setHasDrawn(true);
     setRecognizedLetter(null);
+    setShowAlternatives(false);
     setShowManualPicker(false);
+    setOcrAlternatives([]);
   };
 
   const draw = (e: any) => {
@@ -89,7 +91,9 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     setIsDrawing(true);
     setHasDrawn(true);
     setRecognizedLetter(null);
+    setShowAlternatives(false);
     setShowManualPicker(false);
+    setOcrAlternatives([]);
   };
 
   const handleTouchMove = (e: any) => {
@@ -111,6 +115,8 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     ctx.lineWidth = 6;
     setHasDrawn(false);
     setRecognizedLetter(null);
+    setOcrAlternatives([]);
+    setShowAlternatives(false);
     setShowManualPicker(false);
     onClear();
   };
