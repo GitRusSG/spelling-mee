@@ -29,6 +29,7 @@ import DrawingCanvas from '../../src/components/DrawingCanvas';
 import { InputMode } from '../../src/types';
 import { playCorrectSound, playIncorrectSound, playStreakSound, playButtonClickSound } from '../../src/utils/soundEffects';
 import AnimatedBackground from '../../src/components/AnimatedBackground';
+import RareEvent from '../../src/components/RareEvent';
 import { getEquippedTextStyle } from '../../src/utils/textStyles';
 
 const ENCOURAGEMENT_MESSAGES = [
@@ -102,6 +103,7 @@ export default function TestScreen() {
   const encouragementOpacity = useRef(new Animated.Value(0)).current;
   const streakGlow = useRef(new Animated.Value(0)).current;
   const [showStreakGlow, setShowStreakGlow] = useState(false);
+  const [rareEventTrigger, setRareEventTrigger] = useState(false);
 
   const equippedTextStyle = getEquippedTextStyle();
 
@@ -571,6 +573,7 @@ export default function TestScreen() {
     setDrawLetterCount(0);
     setLetterSequence('');
     setAnswer('');
+    setRareEventTrigger(prev => !prev);
     const nextIndex = currentIndex;
     if (nextIndex < sessionWordList.words.length) {
       playWord(sessionWordList.words[nextIndex]);
@@ -642,6 +645,7 @@ export default function TestScreen() {
       <AnimatedBackground />
       <InterstitialAd visible={showAd} onClose={handleAdClose} />
       <ConfettiAnimation trigger={confettiTrigger} intensity="small" />
+      <RareEvent trigger={rareEventTrigger} />
       <View style={styles.honeyBadge} testID="honey-badge">
         <Text style={styles.honeyBadgeText}>🍯 {honey}</Text>
       </View>

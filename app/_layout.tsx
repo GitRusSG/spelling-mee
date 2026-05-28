@@ -44,20 +44,34 @@ function InnerLayout() {
 
   useEffect(() => {
     setBgColor(getThemeBackground());
+
+    const applyBgStyles = (bg: string) => {
+      document.body.style.backgroundColor = bg;
+      document.documentElement.style.backgroundColor = bg;
+      let bgStyleEl = document.getElementById('spelling-mee-bg-style');
+      if (!bgStyleEl) {
+        bgStyleEl = document.createElement('style');
+        bgStyleEl.id = 'spelling-mee-bg-style';
+        document.head.appendChild(bgStyleEl);
+      }
+      bgStyleEl.textContent = `
+        html, body, #root, [data-testid="results-screen"] { background-color: ${bg} !important; }
+        [role="main"], main { background-color: transparent !important; }
+      `;
+    };
+
     const interval = setInterval(() => {
       const newBg = getThemeBackground();
       setBgColor(newBg);
       // Also set body background on web for full coverage
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
-        document.body.style.backgroundColor = newBg;
-        document.documentElement.style.backgroundColor = newBg;
+        applyBgStyles(newBg);
       }
     }, 2000);
     // Set initial body bg
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const initialBg = getThemeBackground();
-      document.body.style.backgroundColor = initialBg;
-      document.documentElement.style.backgroundColor = initialBg;
+      applyBgStyles(initialBg);
     }
     return () => clearInterval(interval);
   }, []);
