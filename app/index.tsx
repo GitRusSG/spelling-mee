@@ -27,19 +27,11 @@ export default function HomeScreen() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     blitz: true,
     grades: true,
-    other: true,
   });
   const [expandedGrades, setExpandedGrades] = useState<Record<string, boolean>>({});
 
-  const builtinLists = lists.filter((list) => list.type === 'builtin');
   const customLists = lists.filter((list) => list.type === 'custom');
 
-  // Separate built-in lists into categories
-  const blitzIds = new Set(BLITZ_LISTS.map((l) => l.id));
-  const gradeIds = new Set(Object.values(GRADE_LISTS).flat().map((l) => l.id));
-  const otherBuiltinLists = builtinLists.filter(
-    (l) => !blitzIds.has(l.id) && !gradeIds.has(l.id)
-  );
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -223,29 +215,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Other Section */}
-          <TouchableOpacity
-            style={styles.collapsibleHeader}
-            onPress={() => toggleSection('other')}
-            accessibilityRole="button"
-            accessibilityLabel={`Other section, ${expandedSections.other ? 'collapse' : 'expand'}`}
-            testID="other-section-header"
-          >
-            <Text style={styles.collapsibleHeaderText}>
-              {expandedSections.other ? '▼' : '▶'} 📖 Other
-            </Text>
-          </TouchableOpacity>
-          {expandedSections.other && (
-            <View style={styles.collapsibleContent}>
-              {otherBuiltinLists.map((list) => (
-                <WordListCard
-                  key={list.id}
-                  list={list}
-                  onPress={() => router.push(`/test/${list.id}`)}
-                />
-              ))}
-            </View>
-          )}
+
         </View>
 
         {/* Community Library Button — visible when authenticated */}

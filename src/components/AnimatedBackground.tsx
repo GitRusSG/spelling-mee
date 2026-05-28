@@ -27,21 +27,74 @@ interface FloatingItem {
 export default function AnimatedBackground() {
   const [packId, setPackId] = useState<string | null>(null);
   const [items, setItems] = useState<FloatingItem[]>([]);
+  const [isOcean, setIsOcean] = useState(false);
 
   useEffect(() => {
-    try {
-      const storage = createStorage();
-      const id = storage.getString('equipped_bg_pack_id') || null;
-      setPackId(id);
-    } catch {}
+    const checkPack = () => {
+      try {
+        const storage = createStorage();
+        const id = storage.getString('equipped_bg_pack_id') || null;
+        setPackId(prev => {
+          if (prev !== id) return id;
+          return prev;
+        });
+      } catch {}
+    };
+    checkPack();
+    const interval = setInterval(checkPack, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     if (!packId || !BG_CONFIGS[packId]) {
       setItems([]);
+      setIsOcean(false);
       return;
     }
 
+    if (packId === 'bg-ocean') {
+      // Ocean: waves at the bottom, moving horizontally
+      const waveItems: FloatingItem[] = [];
+      for (let i = 0; i < 8; i++) {
+        waveItems.push({
+          x: (i / 8) * SCREEN_WIDTH,
+          y: new Animated.Value(0), // Will be positioned at bottom via style
+          emoji: ['🌊', '🌊', '🌊', '🐚', '🐠', '🦀', '🐟', '🌊'][i],
+          size: 24 + Math.random() * 10,
+          opacity: 0.6 + Math.random() * 0.3,
+          delay: i * 500,
+        });
+      }
+      setItems(waveItems);
+      setIsOcean(true);
+
+      // Animate waves with a gentle bobbing motion
+      waveItems.forEach((item) => {
+        const animate = () => {
+          Animated.sequence([
+            Animated.timing(item.y, {
+              toValue: -15,
+              duration: 1500 + Math.random() * 500,
+              useNativeDriver: USE_NATIVE_DRIVER,
+              delay: item.delay,
+            }),
+            Animated.timing(item.y, {
+              toValue: 15,
+              duration: 1500 + Math.random() * 500,
+              useNativeDriver: USE_NATIVE_DRIVER,
+            }),
+          ]).start(() => {
+            item.delay = 0;
+            animate();
+          });
+        };
+        animate();
+      });
+
+      return () => waveItems.forEach(item => item.y.stopAnimation());
+    }
+
+    setIsOcean(false);
     const config = BG_CONFIGS[packId];
     const newItems: FloatingItem[] = [];
 
@@ -89,7 +142,7 @@ export default function AnimatedBackground() {
         <Animated.Text
           key={i}
           style={[
-            styles.floatingItem,
+            isOcean ? styles.oceanItem : styles.floatingItem,
             {
               left: item.x,
               fontSize: item.size,
@@ -119,5 +172,9 @@ const styles = StyleSheet.create({
   floatingItem: {
     position: 'absolute',
     top: 0,
+  },
+  oceanItem: {
+    position: 'absolute',
+    bottom: 20,
   },
 });
