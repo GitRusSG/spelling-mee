@@ -64,7 +64,7 @@ export default function HomeScreen() {
           <Text style={styles.title}>🐝 Spelling Mee</Text>
           <TouchableOpacity
             style={styles.settingsGear}
-            onPress={() => router.push('/settings/voice')}
+            onPress={() => router.push('/settings')}
             accessibilityRole="button"
             accessibilityLabel="Settings"
             testID="settings-button"

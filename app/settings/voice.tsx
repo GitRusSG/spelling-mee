@@ -300,8 +300,8 @@ export default function VoiceSelectionScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} testID="back-button">
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity onPress={() => router.replace('/settings')} style={styles.backButton} testID="back-button">
+          <Text style={styles.backButtonText}>← Back to Settings</Text>
         </TouchableOpacity>
         <Text style={styles.heading}>🎙️ Choose a Voice</Text>
         <Text style={styles.subtitle}>
