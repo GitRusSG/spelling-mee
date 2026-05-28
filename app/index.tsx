@@ -14,6 +14,7 @@ import { useAuth } from '../src/contexts/AuthContext';
 import WordListCard from '../src/components/WordListCard';
 import { CustomWordList } from '../src/types';
 import { BLITZ_LISTS, GRADE_LISTS } from '../src/data/builtinLists';
+import { getEquippedTextStyle } from '../src/utils/textStyles';
 
 const GRADE_ORDER = ['K1', 'K2', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6'];
 
@@ -61,7 +62,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Settings gear — top right */}
         <View style={styles.topBar}>
-          <Text style={styles.title}>🐝 Spelling Mee</Text>
+          <Text style={[styles.title, getEquippedTextStyle()]}>🐝 Spelling Mee</Text>
           <TouchableOpacity
             style={styles.settingsGear}
             onPress={() => router.push('/settings')}
@@ -101,7 +102,7 @@ export default function HomeScreen() {
 
         {/* Built-in Lists Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📚 Built-in Lists</Text>
+          <Text style={[styles.sectionTitle, getEquippedTextStyle()]}>📚 Built-in Lists</Text>
 
           {/* Blitz Section */}
           <TouchableOpacity
@@ -197,7 +198,7 @@ export default function HomeScreen() {
 
         {/* Custom Lists Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>✏️ My Lists</Text>
+          <Text style={[styles.sectionTitle, getEquippedTextStyle()]}>✏️ My Lists</Text>
 
           {/* Create New List Button — directly below My Lists header */}
           <TouchableOpacity
@@ -291,7 +292,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3E5F5',
+    backgroundColor: 'transparent',
   },
   scrollView: {
     flex: 1,
