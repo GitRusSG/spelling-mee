@@ -87,40 +87,55 @@ export default function ShopScreen() {
   const { isSubscribed } = useSubscription();
   const [unlockedPacks, setUnlockedPacks] = useState<string[]>(getUnlockedPacks());
   const [honey, setHoney] = useState(getTotalHoney());
+  const [confirmPack, setConfirmPack] = useState<Pack | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const getDiscountedCost = (cost: number) => isSubscribed ? Math.floor(cost * 0.9) : cost;
 
   const handleBuy = (pack: Pack) => {
     const cost = getDiscountedCost(pack.cost);
     if (honey < cost) {
-      if (typeof window !== 'undefined') {
-        window.alert(`Not enough honey! You need ${cost} 🍯 but only have ${honey} 🍯. Keep spelling to earn more!`);
-      }
+      setMessage(`Not enough honey! Need ${cost} 🍯, have ${honey} 🍯`);
+      setTimeout(() => setMessage(null), 3000);
       return;
     }
+    // Show inline confirmation
+    setConfirmPack(pack);
+  };
 
-    // Use window.confirm on web since Alert.alert buttons don't work
-    const confirmed = typeof window !== 'undefined'
-      ? window.confirm(`Unlock "${pack.name}" for ${cost} 🍯?`)
-      : true;
+  const confirmBuy = () => {
+    if (!confirmPack) return;
+    const cost = getDiscountedCost(confirmPack.cost);
 
-    if (confirmed) {
-      if (spendHoney(cost)) {
-        saveUnlockedPack(pack.id);
-        setUnlockedPacks((prev) => [...prev, pack.id]);
-        setHoney((prev) => prev - cost);
-        if (typeof window !== 'undefined') {
-          window.alert(`🎉 Unlocked! ${pack.name} is now yours! Tap it again to equip.`);
+    // Directly update storage
+    try {
+      const storage = createStorage();
+      const currentHoney = parseInt(storage.getString('total_honey') || '0', 10);
+      if (currentHoney >= cost) {
+        storage.set('total_honey', String(currentHoney - cost));
+        // Save unlocked
+        const current = getUnlockedPacks();
+        if (!current.includes(confirmPack.id)) {
+          current.push(confirmPack.id);
+          storage.set('unlocked_packs', JSON.stringify(current));
         }
+        setUnlockedPacks((prev) => [...prev, confirmPack.id]);
+        setHoney(currentHoney - cost);
+        setMessage(`🎉 ${confirmPack.name} unlocked! Tap to equip.`);
+      } else {
+        setMessage('Not enough honey!');
       }
+    } catch {
+      setMessage('Something went wrong');
     }
+    setConfirmPack(null);
+    setTimeout(() => setMessage(null), 3000);
   };
 
   const handleEquip = (pack: Pack) => {
     equipPack(pack);
-    if (typeof window !== 'undefined') {
-      window.alert(`✅ ${pack.name} is now active!`);
-    }
+    setMessage(`✅ ${pack.name} equipped!`);
+    setTimeout(() => setMessage(null), 2000);
   };
 
   const handlePress = (pack: Pack, owned: boolean) => {
@@ -144,6 +159,30 @@ export default function ShopScreen() {
         {isSubscribed && (
           <View style={styles.premiumBanner}>
             <Text style={styles.premiumBannerText}>💎 Premium: 10% off all packs!</Text>
+          </View>
+        )}
+
+        {/* Inline message */}
+        {message && (
+          <View style={styles.messageBar}>
+            <Text style={styles.messageText}>{message}</Text>
+          </View>
+        )}
+
+        {/* Inline confirmation */}
+        {confirmPack && (
+          <View style={styles.confirmBar}>
+            <Text style={styles.confirmText}>
+              Buy "{confirmPack.name}" for {getDiscountedCost(confirmPack.cost)} 🍯?
+            </Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity style={styles.confirmYes} onPress={confirmBuy} testID="confirm-buy-yes">
+                <Text style={styles.confirmYesText}>✓ Buy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmNo} onPress={() => setConfirmPack(null)} testID="confirm-buy-no">
+                <Text style={styles.confirmNoText}>✗ Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -238,4 +277,13 @@ const styles = StyleSheet.create({
   originalCost: { fontSize: 12, color: '#999', textDecorationLine: 'line-through', marginBottom: 2 },
   premiumBanner: { backgroundColor: '#E8F5E9', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, alignSelf: 'center', marginBottom: 16 },
   premiumBannerText: { fontSize: 13, fontWeight: '600', color: '#2E7D32' },
+  messageBar: { backgroundColor: '#FFF8E1', borderRadius: 10, padding: 12, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: '#FFC107' },
+  messageText: { fontSize: 14, fontWeight: '600', color: '#F57F17', textAlign: 'center' },
+  confirmBar: { backgroundColor: '#EDE7F6', borderRadius: 12, padding: 16, marginBottom: 16, alignItems: 'center', borderWidth: 2, borderColor: '#7C4DFF' },
+  confirmText: { fontSize: 15, fontWeight: '600', color: '#4A148C', marginBottom: 12, textAlign: 'center' },
+  confirmButtons: { flexDirection: 'row', gap: 12 },
+  confirmYes: { backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20 },
+  confirmYesText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  confirmNo: { backgroundColor: '#FFCDD2', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20 },
+  confirmNoText: { color: '#C62828', fontSize: 15, fontWeight: '700' },
 });
