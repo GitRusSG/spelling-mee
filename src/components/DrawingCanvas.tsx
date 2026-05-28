@@ -20,6 +20,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognizedLetter, setRecognizedLetter] = useState<string | null>(null);
   const [ocrAlternatives, setOcrAlternatives] = useState<string[]>([]);
+  const [showAlternatives, setShowAlternatives] = useState(false);
   const [showManualPicker, setShowManualPicker] = useState(false);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -130,7 +131,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
       });
 
       const text = result.data.text.trim().toUpperCase();
-      // Extract ALL letter characters from the result
+      // Extract ALL letter characters (A-Z only, no numbers)
       const allLetters = text.match(/[A-Z]/g) || [];
       // Deduplicate
       const uniqueLetters = [...new Set(allLetters)];
@@ -162,9 +163,16 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
   };
 
   const handleReject = () => {
-    setRecognizedLetter(null);
-    setOcrAlternatives([]);
-    setShowManualPicker(true);
+    // If OCR found alternatives, show them first
+    if (ocrAlternatives.length > 1) {
+      setRecognizedLetter(null);
+      setShowAlternatives(true);
+    } else {
+      // No alternatives — go straight to manual picker
+      setRecognizedLetter(null);
+      setOcrAlternatives([]);
+      setShowManualPicker(true);
+    }
   };
 
   const handleManualPick = (letter: string) => {
@@ -183,6 +191,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     setHasDrawn(false);
     setRecognizedLetter(null);
     setOcrAlternatives([]);
+    setShowAlternatives(false);
     setShowManualPicker(false);
   };
 
@@ -251,27 +260,39 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
               <Text style={styles.rejectButtonText}>✗ No</Text>
             </TouchableOpacity>
           </View>
-          {/* Only show alternatives if OCR found multiple possibilities */}
-          {ocrAlternatives.length > 1 && (
-            <View style={styles.alternativesContainer}>
-              <Text style={styles.alternativesLabel}>Could also be:</Text>
-              <View style={styles.alternativesRow}>
-                {ocrAlternatives.filter(a => a !== recognizedLetter).map((alt) => (
-                  <TouchableOpacity
-                    key={alt}
-                    style={styles.alternativeButton}
-                    onPress={() => {
-                      onLetterConfirmed(alt.toLowerCase());
-                      clearForNext();
-                    }}
-                    testID={`alt-letter-${alt}`}
-                  >
-                    <Text style={styles.alternativeButtonText}>{alt}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
+        </View>
+      )}
+
+      {/* Alternatives shown after pressing No */}
+      {showAlternatives && !recognizedLetter && (
+        <View style={styles.recognitionResult} testID="alternatives-view">
+          <Text style={styles.recognitionLabel}>Could it be one of these?</Text>
+          <View style={styles.alternativesRow}>
+            {ocrAlternatives.map((alt) => (
+              <TouchableOpacity
+                key={alt}
+                style={styles.alternativeButton}
+                onPress={() => {
+                  onLetterConfirmed(alt.toLowerCase());
+                  clearForNext();
+                }}
+                testID={`alt-letter-${alt}`}
+              >
+                <Text style={styles.alternativeButtonText}>{alt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={styles.noneButton}
+            onPress={() => {
+              setShowAlternatives(false);
+              setOcrAlternatives([]);
+              setShowManualPicker(true);
+            }}
+            testID="none-of-these-button"
+          >
+            <Text style={styles.noneButtonText}>✗ None of these</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -441,6 +462,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: '#7C4DFF',
+  },
+  noneButton: {
+    marginTop: 12,
+    backgroundColor: '#FFCDD2',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    minHeight: 40,
+  },
+  noneButtonText: {
+    color: '#C62828',
+    fontSize: 14,
+    fontWeight: '700',
   },
   letterPickerContainer: {
     backgroundColor: '#EDE7F6',
