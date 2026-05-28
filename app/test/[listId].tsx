@@ -554,6 +554,26 @@ export default function TestScreen() {
     }
   }, [sessionWordList, currentIndex, playWord]);
 
+  // Listen for physical Enter key to submit or continue
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (feedback) {
+          // If showing feedback, Enter = Continue
+          handleContinue();
+        } else if (inputMode === 'text' && answer.trim()) {
+          handleSubmit();
+        } else if (inputMode === 'letter-by-letter' && letterSequence) {
+          handleSubmit();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [feedback, answer, letterSequence, inputMode, handleSubmit, handleContinue]);
+
   const handleLetterPress = useCallback((letter: string) => {
     setLetterSequence((prev) => prev + letter.toLowerCase());
   }, []);

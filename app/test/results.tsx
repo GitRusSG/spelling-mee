@@ -220,9 +220,6 @@ export default function ResultsScreen() {
                 <Text style={styles.givenText}>
                   Your answer: {record.given || '(empty)'}
                 </Text>
-                <Text style={styles.correctSpelling}>
-                  Correct spelling: {record.word}
-                </Text>
               </View>
             )}
           </View>
