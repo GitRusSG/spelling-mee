@@ -109,7 +109,7 @@ async function playWithDefaultTTS(word: string): Promise<void> {
       // Ensure voices are loaded (Chrome loads them async)
       const attemptSpeak = () => {
         const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-GB';
+        utterance.lang = 'en-US';
         utterance.rate = 0.7;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
@@ -117,11 +117,10 @@ async function playWithDefaultTTS(word: string): Promise<void> {
         const voices = window.speechSynthesis.getVoices();
 
         // Priority: Google voices (Google Translate quality)
-        const googleVoice = voices.find(v => v.name.includes('Google UK English Female'))
-          || voices.find(v => v.name.includes('Google UK English'))
+        const googleVoice = voices.find(v => v.name.includes('Google US English'))
+          || voices.find(v => v.name.includes('Google UK English Female'))
           || voices.find(v => v.name.includes('Google') && v.lang.startsWith('en'))
-          || voices.find(v => v.lang === 'en-GB' && v.name.includes('Female'))
-          || voices.find(v => v.lang === 'en-GB')
+          || voices.find(v => v.lang === 'en-US')
           || voices.find(v => v.lang.startsWith('en'));
 
         if (googleVoice) {
@@ -150,7 +149,7 @@ async function playWithDefaultTTS(word: string): Promise<void> {
   const Speech = require('expo-speech');
   return new Promise<void>((resolve, reject) => {
     Speech.speak(word, {
-      language: 'en-GB',
+      language: 'en-US',
       onDone: resolve,
       onError: (error: any) => reject(error),
     });

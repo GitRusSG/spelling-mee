@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useVoiceProfile } from '../../src/contexts/VoiceProfileContext';
+import { useSubscription } from '../../src/contexts/SubscriptionContext';
 import VoiceCard from '../../src/components/VoiceCard';
 import SpeedSlider from '../../src/components/SpeedSlider';
 import { createStorage } from '../../src/services/storage';
@@ -89,9 +91,13 @@ function spendHoney(amount: number): boolean {
 export default function VoiceSelectionScreen() {
   const { profile, availableVoices, isLoading, updateProfile, previewVoice } =
     useVoiceProfile();
+  const { isSubscribed } = useSubscription();
+  const router = useRouter();
   const [speed, setSpeed] = useState(profile.speed);
   const [unlockedVoices, setUnlockedVoices] = useState<string[]>(getUnlockedVoices());
   const [honey, setHoney] = useState(getTotalHoney());
+
+  const getDiscountedCost = (baseCost: number) => isSubscribed ? Math.floor(baseCost * 0.9) : baseCost;
 
   // Ad simulation state
   const [showingAd, setShowingAd] = useState(false);
@@ -162,10 +168,10 @@ export default function VoiceSelectionScreen() {
 
   const handleVoiceSelect = (voiceId: string) => {
     if (!isVoiceUnlocked(voiceId)) {
-      const cost = HONEY_COST_TO_UNLOCK;
+      const cost = getDiscountedCost(HONEY_COST_TO_UNLOCK);
       Alert.alert(
         '🔒 Voice Locked',
-        `This voice costs ${cost} 🍯 to unlock.\n\nYou have ${honey} 🍯.`,
+        `This voice costs ${cost} 🍯 to unlock.${isSubscribed ? ' (10% off!)' : ''}\n\nYou have ${honey} 🍯.`,
         [
           { text: 'Cancel', style: 'cancel' },
           ...(honey >= cost
@@ -209,19 +215,20 @@ export default function VoiceSelectionScreen() {
     if (!funnyVoice) return;
 
     if (!isVoiceUnlocked(funnyVoiceId)) {
+      const cost = getDiscountedCost(FUNNY_HONEY_COST);
       Alert.alert(
         '🔒 Premium Voice Locked',
-        `This premium voice costs ${FUNNY_HONEY_COST} 🍯 or 2 ads to unlock.\n\nYou have ${honey} 🍯.`,
+        `This premium voice costs ${cost} 🍯 or 2 ads to unlock.${isSubscribed ? ' (10% off!)' : ''}\n\nYou have ${honey} 🍯.`,
         [
           { text: 'Cancel', style: 'cancel' },
-          ...(honey >= FUNNY_HONEY_COST
+          ...(honey >= cost
             ? [{
-                text: `Unlock (${FUNNY_HONEY_COST} 🍯)`,
+                text: `Unlock (${cost} 🍯)`,
                 onPress: () => {
-                  if (spendHoney(FUNNY_HONEY_COST)) {
+                  if (spendHoney(cost)) {
                     saveUnlockedVoice(funnyVoiceId);
                     setUnlockedVoices((prev) => [...prev, funnyVoiceId]);
-                    setHoney((prev) => prev - FUNNY_HONEY_COST);
+                    setHoney((prev) => prev - cost);
                     // Select it with custom pitch/rate
                     updateProfile({
                       ...profile,
@@ -293,6 +300,9 @@ export default function VoiceSelectionScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
       >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} testID="back-button">
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <Text style={styles.heading}>🎙️ Choose a Voice</Text>
         <Text style={styles.subtitle}>
           Pick a voice for spelling tests. Tap to hear a sample!
@@ -389,6 +399,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3E5F5',
   },
+  backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4, marginBottom: 8 },
+  backButtonText: { fontSize: 15, color: '#7C4DFF', fontWeight: '600' },
   scrollView: {
     flex: 1,
   },

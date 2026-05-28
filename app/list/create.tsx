@@ -143,6 +143,9 @@ function CreateListForm() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.content}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} testID="back-button">
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Create New List</Text>
 
         {/* Name Input */}
@@ -273,6 +276,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
+  backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4, marginBottom: 8 },
+  backButtonText: { fontSize: 15, color: '#7C4DFF', fontWeight: '600' },
   flex: {
     flex: 1,
   },

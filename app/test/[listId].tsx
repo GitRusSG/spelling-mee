@@ -89,6 +89,9 @@ export default function TestScreen() {
   const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
   const fallbackOpacity = useRef(new Animated.Value(0)).current;
 
+  // Honey balance state
+  const [honey, setHoney] = useState(0);
+
   // Gamification state
   const [confettiTrigger, setConfettiTrigger] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -100,6 +103,15 @@ export default function TestScreen() {
 
   const handleAdClose = useCallback(() => {
     setShowAd(false);
+  }, []);
+
+  // Load honey balance on mount
+  useEffect(() => {
+    try {
+      const storage = require('../../src/services/storage').createStorage();
+      const currentHoney = parseInt(storage.getString('total_honey') || '0', 10);
+      setHoney(currentHoney);
+    } catch {}
   }, []);
 
   // Show encouragement message with fade animation
@@ -523,7 +535,9 @@ export default function TestScreen() {
       try {
         const storage = require('../../src/services/storage').createStorage();
         const currentHoney = parseInt(storage.getString('total_honey') || '0', 10);
-        storage.set('total_honey', String(currentHoney + 1));
+        const newHoney = currentHoney + 1;
+        storage.set('total_honey', String(newHoney));
+        setHoney(newHoney);
       } catch {}
 
       if (newTotalCorrect % 3 === 0) {
@@ -620,6 +634,12 @@ export default function TestScreen() {
     <View style={styles.container}>
       <InterstitialAd visible={showAd} onClose={handleAdClose} />
       <ConfettiAnimation trigger={confettiTrigger} intensity="small" />
+      <View style={styles.honeyBadge} testID="honey-badge">
+        <Text style={styles.honeyBadgeText}>🍯 {honey}</Text>
+      </View>
+      <TouchableOpacity style={styles.homeIconButton} onPress={() => router.replace('/')} testID="home-icon-button">
+        <Text style={styles.homeIconText}>🏠</Text>
+      </TouchableOpacity>
       <ProgressIndicator
         current={currentIndex + 1}
         total={sessionWordList.words.length}
@@ -919,6 +939,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  honeyBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#FFF8E1', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#FFC107', zIndex: 10 },
+  honeyBadgeText: { fontSize: 14, fontWeight: '700', color: '#F57F17' },
+  homeIconButton: { position: 'absolute', top: 12, left: 12, zIndex: 10, backgroundColor: '#fff', borderRadius: 20, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+  homeIconText: { fontSize: 20 },
   audioSection: {
     marginVertical: 24,
     alignItems: 'center',

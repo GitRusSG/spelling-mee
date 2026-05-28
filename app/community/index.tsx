@@ -101,6 +101,9 @@ function CommunityLibraryContent() {
 
   return (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton} testID="back-button">
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
       <Text style={styles.title}>🌍 Community Library</Text>
       <Text style={styles.subtitle}>Word lists shared by other parents</Text>
 
@@ -147,6 +150,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3E5F5',
   },
+  backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4, marginBottom: 8 },
+  backButtonText: { fontSize: 15, color: '#7C4DFF', fontWeight: '600' },
   scrollView: {
     flex: 1,
   },

@@ -7,9 +7,9 @@ import { VoiceOption, VoiceProfile } from '../types';
 const VOICE_PROFILE_KEY = 'voice_profile';
 
 const DEFAULT_VOICE_PROFILE: VoiceProfile = {
-  voiceId: 'en-GB-female-default',
+  voiceId: 'Google US English',
   speed: 1.0,
-  label: 'British English Female',
+  label: 'Google US English',
 };
 
 /**
