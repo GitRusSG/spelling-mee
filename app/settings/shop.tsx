@@ -204,7 +204,7 @@ export default function ShopScreen() {
                 <Text style={styles.packDescription}>{pack.description}</Text>
               </View>
               {owned ? (
-                <Text style={styles.ownedBadge}>✅ Owned</Text>
+                <Text style={styles.ownedBadge}>✅ Tap to equip</Text>
               ) : (
                 isSubscribed ? (
                   <View style={styles.discountContainer}>
@@ -237,7 +237,7 @@ export default function ShopScreen() {
                 <Text style={styles.packDescription}>{pack.description}</Text>
               </View>
               {owned ? (
-                <Text style={styles.ownedBadge}>✅ Owned</Text>
+                <Text style={styles.ownedBadge}>✅ Tap to equip</Text>
               ) : (
                 isSubscribed ? (
                   <View style={styles.discountContainer}>

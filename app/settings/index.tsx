@@ -50,8 +50,21 @@ export default function SettingsScreen() {
   const { isAuthenticated, user, signOut } = useAuth();
   const [bgColor, setBgColor] = useState(getStoredColor('app_bg_color', '#F3E5F5'));
   const [textColor, setTextColor] = useState(getStoredColor('app_text_color', '#4A148C'));
+  const [equippedBg, setEquippedBg] = useState(getEquippedLabel('equipped_bg_pack', 'None — Browse Shop →'));
+  const [equippedText, setEquippedText] = useState(getEquippedLabel('equipped_text_pack', 'None — Browse Shop →'));
   const [code, setCode] = useState('');
   const [codeMessage, setCodeMessage] = useState<{ text: string; success: boolean } | null>(null);
+
+  // Refresh equipped packs when screen is focused (coming back from shop)
+  const refreshEquipped = () => {
+    setEquippedBg(getEquippedLabel('equipped_bg_pack', 'None — Browse Shop →'));
+    setEquippedText(getEquippedLabel('equipped_text_pack', 'None — Browse Shop →'));
+  };
+
+  // Poll for changes when component re-renders (simple approach for web)
+  React.useEffect(() => {
+    refreshEquipped();
+  });
 
   const VALID_CODES: Record<string, number> = {
     'fedor': 999,
@@ -151,12 +164,12 @@ export default function SettingsScreen() {
 
           <Text style={[styles.label, { marginTop: 16 }]}>Active Background Effect</Text>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/settings/shop')}>
-            <Text style={styles.navButtonText}>{getEquippedLabel('equipped_bg_pack', 'None — Browse Shop →')}</Text>
+            <Text style={styles.navButtonText}>{equippedBg}</Text>
           </TouchableOpacity>
 
           <Text style={[styles.label, { marginTop: 12 }]}>Active Text Style</Text>
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/settings/shop')}>
-            <Text style={styles.navButtonText}>{getEquippedLabel('equipped_text_pack', 'None — Browse Shop →')}</Text>
+            <Text style={styles.navButtonText}>{equippedText}</Text>
           </TouchableOpacity>
         </View>
 
