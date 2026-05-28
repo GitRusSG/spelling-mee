@@ -88,11 +88,11 @@ export default function RareEvent({ trigger }: RareEventProps) {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: '30%',
+    top: '15%',
     alignSelf: 'center',
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -100,21 +100,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     zIndex: 999,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#FFD600',
   },
   emoji: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#4A148C',
+    fontSize: 32,
     marginBottom: 4,
   },
-  description: {
+  name: {
     fontSize: 14,
+    fontWeight: '800',
+    color: '#4A148C',
+    marginBottom: 2,
+  },
+  description: {
+    fontSize: 11,
     color: '#666',
   },
 });

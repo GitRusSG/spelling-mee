@@ -20,6 +20,14 @@ const TEXT_COLORS = [
   { color: '#1B5E20', label: 'Green' },
 ];
 
+const AUTO_CONTINUE_OPTIONS = [
+  { value: 0, label: 'Off (manual)' },
+  { value: 1000, label: '1 second' },
+  { value: 2000, label: '2 seconds (default)' },
+  { value: 3000, label: '3 seconds' },
+  { value: 5000, label: '5 seconds' },
+];
+
 function getStoredColor(key: string, fallback: string): string {
   try {
     const storage = createStorage();
@@ -54,6 +62,15 @@ export default function SettingsScreen() {
   const [equippedText, setEquippedText] = useState(getEquippedLabel('equipped_text_pack', 'None — Browse Shop →'));
   const [code, setCode] = useState('');
   const [codeMessage, setCodeMessage] = useState<{ text: string; success: boolean } | null>(null);
+  const [autoContinueDelay, setAutoContinueDelay] = useState(() => {
+    try {
+      const storage = createStorage();
+      const stored = storage.getString('auto_continue_delay');
+      return stored ? parseInt(stored, 10) : 2000;
+    } catch {
+      return 2000;
+    }
+  });
 
   // Refresh equipped packs when screen is focused (coming back from shop)
   const refreshEquipped = () => {
@@ -221,6 +238,37 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Auto-Continue Delay */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>⏱️ Auto-Continue Delay</Text>
+          <View style={styles.autoContinueRow}>
+            {AUTO_CONTINUE_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.autoContinueOption,
+                  autoContinueDelay === option.value && styles.autoContinueOptionSelected,
+                ]}
+                onPress={() => {
+                  setAutoContinueDelay(option.value);
+                  try {
+                    const storage = createStorage();
+                    storage.set('auto_continue_delay', String(option.value));
+                  } catch {}
+                }}
+                testID={`auto-continue-${option.value}`}
+              >
+                <Text style={[
+                  styles.autoContinueOptionText,
+                  autoContinueDelay === option.value && styles.autoContinueOptionTextSelected,
+                ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Account */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>👤 Account</Text>
@@ -270,4 +318,9 @@ const styles = StyleSheet.create({
   codeMessage: { marginTop: 8, fontSize: 14, fontWeight: '600' },
   codeSuccess: { color: '#2E7D32' },
   codeError: { color: '#C62828' },
+  autoContinueRow: { gap: 8 },
+  autoContinueOption: { backgroundColor: '#F5F5F5', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, borderWidth: 2, borderColor: '#ddd' },
+  autoContinueOptionSelected: { backgroundColor: '#EDE7F6', borderColor: '#7C4DFF' },
+  autoContinueOptionText: { fontSize: 15, fontWeight: '600', color: '#555', textAlign: 'center' },
+  autoContinueOptionTextSelected: { color: '#7C4DFF' },
 });

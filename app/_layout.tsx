@@ -143,7 +143,7 @@ function InnerLayout() {
         <Stack.Screen name="list/[id]/dictation" options={{ title: 'Record Dictation' }} />
         <Stack.Screen name="subscription" options={{ title: 'Subscription' }} />
       </Stack>
-      {!isSubscribed && <AdBanner />}
+      {/* Ads disabled */}
     </View>
   );
 }

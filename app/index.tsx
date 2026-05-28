@@ -100,6 +100,58 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* Custom Lists Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, getEquippedTextStyle()]}>✏️ My Lists</Text>
+
+          {/* Create New List Button — directly below My Lists header */}
+          <TouchableOpacity
+            style={[styles.createButton, !isAuthenticated && styles.createButtonDisabled]}
+            onPress={handleCreateList}
+            accessibilityRole="button"
+            accessibilityLabel="Create new list"
+            accessibilityState={{ disabled: !isAuthenticated }}
+            testID="create-list-button"
+          >
+            <Text style={styles.createButtonText}>✨ Create New List</Text>
+          </TouchableOpacity>
+          {!isAuthenticated && (
+            <Text style={styles.createDisabledMessage} testID="create-list-auth-message">
+              Sign in to create and share custom word lists
+            </Text>
+          )}
+
+          {customLists.length === 0 ? (
+            <Text style={styles.emptyText}>
+              You haven't made any lists yet. Tap the button above to create your first one! 🌟
+            </Text>
+          ) : (
+            customLists.map((list) => {
+              const customList = list as CustomWordList;
+              const isOwned = isAuthenticated && user && customList.creatorUid === user.uid;
+              return (
+                <View key={list.id} style={styles.customListWrapper}>
+                  <WordListCard
+                    list={list}
+                    onPress={() => router.push(`/list/${list.id}/preview`)}
+                  />
+                  {isOwned && (
+                    <TouchableOpacity
+                      style={styles.recordDictationLink}
+                      onPress={() => router.push(`/list/${list.id}/dictation`)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Record dictation for ${list.name}`}
+                      testID={`record-dictation-${list.id}`}
+                    >
+                      <Text style={styles.recordDictationText}>🎙️ Record Dictation</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })
+          )}
+        </View>
+
         {/* Built-in Lists Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, getEquippedTextStyle()]}>📚 Built-in Lists</Text>
@@ -193,58 +245,6 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
-          )}
-        </View>
-
-        {/* Custom Lists Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, getEquippedTextStyle()]}>✏️ My Lists</Text>
-
-          {/* Create New List Button — directly below My Lists header */}
-          <TouchableOpacity
-            style={[styles.createButton, !isAuthenticated && styles.createButtonDisabled]}
-            onPress={handleCreateList}
-            accessibilityRole="button"
-            accessibilityLabel="Create new list"
-            accessibilityState={{ disabled: !isAuthenticated }}
-            testID="create-list-button"
-          >
-            <Text style={styles.createButtonText}>✨ Create New List</Text>
-          </TouchableOpacity>
-          {!isAuthenticated && (
-            <Text style={styles.createDisabledMessage} testID="create-list-auth-message">
-              Sign in to create and share custom word lists
-            </Text>
-          )}
-
-          {customLists.length === 0 ? (
-            <Text style={styles.emptyText}>
-              You haven't made any lists yet. Tap the button above to create your first one! 🌟
-            </Text>
-          ) : (
-            customLists.map((list) => {
-              const customList = list as CustomWordList;
-              const isOwned = isAuthenticated && user && customList.creatorUid === user.uid;
-              return (
-                <View key={list.id} style={styles.customListWrapper}>
-                  <WordListCard
-                    list={list}
-                    onPress={() => router.push(`/list/${list.id}/preview`)}
-                  />
-                  {isOwned && (
-                    <TouchableOpacity
-                      style={styles.recordDictationLink}
-                      onPress={() => router.push(`/list/${list.id}/dictation`)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Record dictation for ${list.name}`}
-                      testID={`record-dictation-${list.id}`}
-                    >
-                      <Text style={styles.recordDictationText}>🎙️ Record Dictation</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              );
-            })
           )}
         </View>
 

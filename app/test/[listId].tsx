@@ -107,6 +107,17 @@ export default function TestScreen() {
 
   const equippedTextStyle = getEquippedTextStyle();
 
+  function getAutoContinueDelay(): number {
+    try {
+      const { createStorage } = require('../../src/services/storage');
+      const storage = createStorage();
+      const stored = storage.getString('auto_continue_delay');
+      return stored ? parseInt(stored, 10) : 2000;
+    } catch {
+      return 2000;
+    }
+  }
+
   const handleAdClose = useCallback(() => {
     setShowAd(false);
   }, []);
@@ -563,6 +574,17 @@ export default function TestScreen() {
     setAnswer('');
     setLetterSequence('');
 
+    // Auto-continue after delay for correct answers
+    if (isCorrect) {
+      const delay = getAutoContinueDelay();
+      if (delay > 0) {
+        setTimeout(() => {
+          setRareEventTrigger(prev => !prev); // Trigger rare event check
+          handleContinue();
+        }, delay);
+      }
+    }
+
   }, [sessionWordList, currentIndex, answer, letterSequence, inputMode, status, submitAnswer, playWord, streak, totalCorrect, showEncouragement, animateStreakGlow]);
 
   const handleContinue = useCallback(() => {
@@ -649,7 +671,15 @@ export default function TestScreen() {
       <View style={styles.honeyBadge} testID="honey-badge">
         <Text style={styles.honeyBadgeText}>🍯 {honey}</Text>
       </View>
-      <TouchableOpacity style={styles.homeIconButton} onPress={() => router.replace('/')} testID="home-icon-button">
+      <TouchableOpacity style={styles.homeIconButton} onPress={() => {
+        if (typeof window !== 'undefined') {
+          if (window.confirm('Leave test? Your progress will be lost.')) {
+            router.replace('/');
+          }
+        } else {
+          router.replace('/');
+        }
+      }} testID="home-icon-button">
         <Text style={styles.homeIconText}>🏠</Text>
       </TouchableOpacity>
       <ProgressIndicator
@@ -745,15 +775,25 @@ export default function TestScreen() {
           {!feedback.correct && (
             <View style={styles.comparisonContainer}>
               <Text style={styles.comparisonLabel}>You typed:</Text>
-              <Text style={styles.comparisonWrong}>{feedback.given || '(empty)'}</Text>
-              <Text style={styles.comparisonLabel}>Correct spelling:</Text>
+              <View style={styles.letterComparisonRow}>
+                {feedback.given.split('').map((char, i) => {
+                  const correctChar = feedback.word[i] || '';
+                  const isWrong = char.toLowerCase() !== correctChar.toLowerCase();
+                  return (
+                    <Text key={i} style={[styles.comparisonChar, isWrong && styles.wrongChar]}>
+                      {char}
+                    </Text>
+                  );
+                })}
+              </View>
+              <Text style={styles.comparisonLabel}>Correct:</Text>
               <Text style={styles.comparisonCorrect}>{feedback.word}</Text>
             </View>
           )}
         </View>
       )}
 
-      {feedback && status !== 'complete' && (
+      {feedback && !feedback.correct && status !== 'complete' && (
         <TouchableOpacity
           style={styles.continueButton}
           onPress={handleContinue}
@@ -1076,6 +1116,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginBottom: 2,
+  },
+  letterComparisonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  comparisonChar: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    marginHorizontal: 2,
+  },
+  wrongChar: {
+    color: '#C62828',
+    textDecorationLine: 'underline',
+    textDecorationColor: '#C62828',
   },
   comparisonWrong: {
     fontSize: 20,
