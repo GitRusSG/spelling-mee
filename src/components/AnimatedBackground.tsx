@@ -53,33 +53,78 @@ export default function AnimatedBackground() {
     }
 
     if (packId === 'bg-ocean') {
-      // Ocean: waves at the bottom, moving horizontally
-      const waveItems: FloatingItem[] = [];
-      for (let i = 0; i < 8; i++) {
-        waveItems.push({
-          x: (i / 8) * SCREEN_WIDTH,
-          y: new Animated.Value(0), // Will be positioned at bottom via style
-          emoji: ['🌊', '🌊', '🌊', '🐚', '🐠', '🦀', '🐟', '🌊'][i],
-          size: 24 + Math.random() * 10,
-          opacity: 0.6 + Math.random() * 0.3,
-          delay: i * 500,
-        });
-      }
-      setItems(waveItems);
       setIsOcean(true);
 
-      // Animate waves with a gentle bobbing motion
-      waveItems.forEach((item) => {
+      // Three layers: shells falling from top, waves in center, fish below waves
+      const allItems: FloatingItem[] = [];
+
+      // Layer 1: Shells falling from top (like rain)
+      for (let i = 0; i < 6; i++) {
+        allItems.push({
+          x: Math.random() * SCREEN_WIDTH,
+          y: new Animated.Value(-50),
+          emoji: ['🐚', '🐚', '🪸', '🐚', '⭐', '🐚'][i],
+          size: 16 + Math.random() * 8,
+          opacity: 0.5 + Math.random() * 0.3,
+          delay: Math.random() * 4000,
+        });
+      }
+
+      // Layer 2: Waves bobbing in the center
+      for (let i = 0; i < 6; i++) {
+        allItems.push({
+          x: (i / 6) * SCREEN_WIDTH,
+          y: new Animated.Value(SCREEN_HEIGHT * 0.45),
+          emoji: '🌊',
+          size: 28 + Math.random() * 8,
+          opacity: 0.8,
+          delay: i * 400,
+        });
+      }
+
+      // Layer 3: Fish swimming below waves
+      for (let i = 0; i < 5; i++) {
+        allItems.push({
+          x: Math.random() * SCREEN_WIDTH,
+          y: new Animated.Value(SCREEN_HEIGHT * 0.55 + Math.random() * (SCREEN_HEIGHT * 0.3)),
+          emoji: ['🐠', '🐟', '🦀', '🐡', '🐙'][i],
+          size: 20 + Math.random() * 10,
+          opacity: 0.6 + Math.random() * 0.3,
+          delay: i * 600,
+        });
+      }
+
+      setItems(allItems);
+
+      // Animate shells falling
+      allItems.slice(0, 6).forEach((item) => {
+        const animate = () => {
+          item.y.setValue(-50);
+          Animated.timing(item.y, {
+            toValue: SCREEN_HEIGHT * 0.45,
+            duration: 5000 + Math.random() * 3000,
+            useNativeDriver: USE_NATIVE_DRIVER,
+            delay: item.delay,
+          }).start(() => {
+            item.delay = 0;
+            animate();
+          });
+        };
+        animate();
+      });
+
+      // Animate waves bobbing
+      allItems.slice(6, 12).forEach((item) => {
         const animate = () => {
           Animated.sequence([
             Animated.timing(item.y, {
-              toValue: -15,
+              toValue: SCREEN_HEIGHT * 0.45 - 10,
               duration: 1500 + Math.random() * 500,
               useNativeDriver: USE_NATIVE_DRIVER,
               delay: item.delay,
             }),
             Animated.timing(item.y, {
-              toValue: 15,
+              toValue: SCREEN_HEIGHT * 0.45 + 10,
               duration: 1500 + Math.random() * 500,
               useNativeDriver: USE_NATIVE_DRIVER,
             }),
@@ -91,7 +136,31 @@ export default function AnimatedBackground() {
         animate();
       });
 
-      return () => waveItems.forEach(item => item.y.stopAnimation());
+      // Animate fish drifting side to side (using y for subtle vertical movement)
+      allItems.slice(12).forEach((item) => {
+        const baseY = SCREEN_HEIGHT * 0.55 + Math.random() * (SCREEN_HEIGHT * 0.25);
+        const animate = () => {
+          Animated.sequence([
+            Animated.timing(item.y, {
+              toValue: baseY - 20,
+              duration: 2000 + Math.random() * 1000,
+              useNativeDriver: USE_NATIVE_DRIVER,
+              delay: item.delay,
+            }),
+            Animated.timing(item.y, {
+              toValue: baseY + 20,
+              duration: 2000 + Math.random() * 1000,
+              useNativeDriver: USE_NATIVE_DRIVER,
+            }),
+          ]).start(() => {
+            item.delay = 0;
+            animate();
+          });
+        };
+        animate();
+      });
+
+      return () => allItems.forEach(item => item.y.stopAnimation());
     }
 
     setIsOcean(false);
@@ -138,11 +207,13 @@ export default function AnimatedBackground() {
 
   return (
     <View style={styles.container} pointerEvents="none" testID="animated-background">
+      {/* Blue bottom half for ocean */}
+      {isOcean && <View style={styles.oceanBottomHalf} />}
       {items.map((item, i) => (
         <Animated.Text
           key={i}
           style={[
-            isOcean ? styles.oceanItem : styles.floatingItem,
+            styles.floatingItem,
             {
               left: item.x,
               fontSize: item.size,
@@ -172,6 +243,16 @@ const styles = StyleSheet.create({
   floatingItem: {
     position: 'absolute',
     top: 0,
+  },
+  oceanBottomHalf: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+    backgroundColor: 'rgba(33, 150, 243, 0.15)',
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   oceanItem: {
     position: 'absolute',
