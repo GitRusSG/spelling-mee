@@ -36,6 +36,15 @@ function saveColor(key: string, color: string) {
   } catch {}
 }
 
+function getEquippedLabel(key: string, fallback: string): string {
+  try {
+    const storage = createStorage();
+    return storage.getString(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { isAuthenticated, user, signOut } = useAuth();
@@ -98,6 +107,28 @@ export default function SettingsScreen() {
               />
             ))}
           </View>
+
+          <Text style={[styles.label, { marginTop: 16 }]}>Active Background Effect</Text>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/settings/shop')}>
+            <Text style={styles.navButtonText}>{getEquippedLabel('equipped_bg_pack', 'None — Browse Shop →')}</Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.label, { marginTop: 12 }]}>Active Text Style</Text>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/settings/shop')}>
+            <Text style={styles.navButtonText}>{getEquippedLabel('equipped_text_pack', 'None — Browse Shop →')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Shop */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>🛒 Shop</Text>
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => router.push('/settings/shop')}
+            testID="shop-link"
+          >
+            <Text style={styles.navButtonText}>Browse Packs →</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Voice Settings */}

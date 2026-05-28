@@ -26,6 +26,7 @@ function InnerLayout() {
         <Stack.Screen name="community/[listId]" options={{ title: 'Shared List' }} />
         <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
         <Stack.Screen name="settings/voice" options={{ title: 'Voice Settings' }} />
+        <Stack.Screen name="settings/shop" options={{ title: 'Shop' }} />
         <Stack.Screen name="list/[id]/dictation" options={{ title: 'Record Dictation' }} />
         <Stack.Screen name="subscription" options={{ title: 'Subscription' }} />
       </Stack>
