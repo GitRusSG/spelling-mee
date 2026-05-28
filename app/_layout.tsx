@@ -45,8 +45,20 @@ function InnerLayout() {
   useEffect(() => {
     setBgColor(getThemeBackground());
     const interval = setInterval(() => {
-      setBgColor(getThemeBackground());
+      const newBg = getThemeBackground();
+      setBgColor(newBg);
+      // Also set body background on web for full coverage
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        document.body.style.backgroundColor = newBg;
+        document.documentElement.style.backgroundColor = newBg;
+      }
     }, 2000);
+    // Set initial body bg
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const initialBg = getThemeBackground();
+      document.body.style.backgroundColor = initialBg;
+      document.documentElement.style.backgroundColor = initialBg;
+    }
     return () => clearInterval(interval);
   }, []);
 
@@ -88,8 +100,6 @@ function InnerLayout() {
     };
     applyGlobalTextStyle();
     const interval = setInterval(applyGlobalTextStyle, 2000);
-    return () => clearInterval(interval);
-  }, []);
     return () => clearInterval(interval);
   }, []);
 
