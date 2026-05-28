@@ -26,7 +26,7 @@ export interface CustomWordList extends WordList {
 
 // ─── Spelling Test Session ───────────────────────────────────────────────────
 
-export type InputMode = 'text' | 'letter-by-letter';
+export type InputMode = 'text' | 'letter-by-letter' | 'draw';
 
 export interface TestSession {
   listId: string;

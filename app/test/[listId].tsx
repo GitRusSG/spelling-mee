@@ -25,6 +25,7 @@ import LetterKeyboard from '../../src/components/LetterKeyboard';
 import QwertyKeyboard from '../../src/components/QwertyKeyboard';
 import InterstitialAd from '../../src/components/InterstitialAd';
 import ConfettiAnimation from '../../src/components/ConfettiAnimation';
+import DrawingCanvas from '../../src/components/DrawingCanvas';
 import { InputMode } from '../../src/types';
 import { playCorrectSound, playIncorrectSound, playStreakSound, playButtonClickSound } from '../../src/utils/soundEffects';
 
@@ -79,6 +80,7 @@ export default function TestScreen() {
   const [isDictating, setIsDictating] = useState(false);
   const [dictationFeedback, setDictationFeedback] = useState<string | null>(null);
   const [dictationOptions, setDictationOptions] = useState<string[] | null>(null);
+  const [drawLetterCount, setDrawLetterCount] = useState(0);
   const dictationFeedbackOpacity = useRef(new Animated.Value(0)).current;
   const recognitionRef = useRef<any>(null);
   const [showAd, setShowAd] = useState(() => shouldShowAd(subscriptionStatus));
@@ -484,7 +486,7 @@ export default function TestScreen() {
     if (!sessionWordList || status !== 'active') return;
 
     const currentWord = sessionWordList.words[currentIndex];
-    const currentAnswer = inputMode === 'letter-by-letter' ? letterSequence : answer;
+    const currentAnswer = inputMode === 'text' ? answer : letterSequence;
     const trimmedAnswer = currentAnswer.trim().toLowerCase();
     const isCorrect = currentWord.trim().toLowerCase() === trimmedAnswer;
 
@@ -565,7 +567,7 @@ export default function TestScreen() {
           handleContinue();
         } else if (inputMode === 'text' && answer.trim()) {
           handleSubmit();
-        } else if (inputMode === 'letter-by-letter' && letterSequence) {
+        } else if ((inputMode === 'letter-by-letter' || inputMode === 'draw') && letterSequence) {
           handleSubmit();
         }
       }
@@ -583,11 +585,14 @@ export default function TestScreen() {
   }, []);
 
   const handleModeToggle = useCallback(() => {
-    const newMode: InputMode = inputMode === 'text' ? 'letter-by-letter' : 'text';
+    const modeOrder: InputMode[] = ['text', 'letter-by-letter', 'draw'];
+    const currentIdx = modeOrder.indexOf(inputMode);
+    const newMode = modeOrder[(currentIdx + 1) % modeOrder.length];
     setInputMode(newMode);
     // Clear current input when switching modes
     setAnswer('');
     setLetterSequence('');
+    setDrawLetterCount(0);
   }, [inputMode]);
 
   // Show loading state if word list not found
@@ -734,10 +739,14 @@ export default function TestScreen() {
           onPress={handleModeToggle}
           testID="mode-toggle-button"
           accessibilityRole="button"
-          accessibilityLabel={`Switch to ${inputMode === 'text' ? 'dictation' : 'text'} mode`}
+          accessibilityLabel={`Switch to ${inputMode === 'text' ? 'dictation' : inputMode === 'letter-by-letter' ? 'draw' : 'text'} mode`}
         >
           <Text style={styles.modeToggleText}>
-            {inputMode === 'text' ? '🔤 Switch to Dictation Mode' : '⌨️ Switch to Text Mode'}
+            {inputMode === 'text'
+              ? '🔤 Switch to Dictation Mode'
+              : inputMode === 'letter-by-letter'
+              ? '✏️ Switch to Draw Mode'
+              : '⌨️ Switch to Text Mode'}
           </Text>
         </TouchableOpacity>
 
@@ -755,6 +764,56 @@ export default function TestScreen() {
               onSubmit={handleSubmit}
               submitDisabled={!answer.trim() || !!feedback}
             />
+          </>
+        ) : inputMode === 'draw' ? (
+          <>
+            <Text style={styles.dictationInstruction}>
+              Draw each letter one at a time
+            </Text>
+
+            <View style={styles.letterDisplay} testID="letter-display">
+              <Text style={styles.letterDisplayText} testID="letter-display-text">
+                {letterSequence || ' '}
+              </Text>
+            </View>
+
+            <DrawingCanvas
+              onLetterConfirmed={(letter) => {
+                setLetterSequence((prev) => prev + letter);
+                setDrawLetterCount((prev) => prev + 1);
+              }}
+              onClear={() => {}}
+              letterIndex={drawLetterCount}
+            />
+
+            {letterSequence.length > 0 && (
+              <TouchableOpacity
+                style={styles.backspaceButton}
+                onPress={() => {
+                  setLetterSequence((prev) => prev.slice(0, -1));
+                  setDrawLetterCount((prev) => Math.max(0, prev - 1));
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Delete last letter"
+                testID="backspace-button"
+              >
+                <Text style={styles.backspaceButtonText}>⬅️ Backspace</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                (!letterSequence || !!feedback) && styles.submitButtonDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={!letterSequence || !!feedback}
+              testID="submit-button"
+              accessibilityRole="button"
+              accessibilityLabel="Submit answer"
+            >
+              <Text style={styles.submitButtonText}>Submit ✨</Text>
+            </TouchableOpacity>
           </>
         ) : (
           <>
