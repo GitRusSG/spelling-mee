@@ -384,3 +384,98 @@ As a Child, I want positive feedback throughout the test so that I feel supporte
 2. Show a gentle encouragement after an incorrect answer (e.g., "Almost! You'll get it next time 😊")
 3. Messages appear briefly (2 seconds) and fade out without blocking input
 4. Use at least 5 different messages for variety
+
+---
+
+## Recent Additions
+
+### 32. On-Screen QWERTY Keyboard (Text Mode)
+
+As a Child, I want to type my answer using an on-screen keyboard so that I don't see word suggestions from the device keyboard.
+
+1. Display a QWERTY keyboard on screen in text mode instead of using the device keyboard
+2. Include all 26 letters, a space key, backspace, and submit button
+3. Do not show autocomplete or word suggestions
+4. Pressing Enter on a physical keyboard submits the answer
+
+---
+
+### 33. Continue Button After Each Answer
+
+As a Child, I want to press Continue before moving to the next word so that I have time to read the correct spelling.
+
+1. After submitting an answer, show feedback with a "Continue →" button
+2. Do not auto-advance to the next word
+3. When incorrect, show the child's wrong answer alongside the correct spelling
+4. The child must tap Continue (or press Enter) to proceed
+
+---
+
+### 34. Blitz Sets
+
+As a Child, I want quick 5-word tests for fast practice rounds.
+
+1. Provide at least 3 blitz sets: Easy, Medium, Hard
+2. Each blitz set contains exactly 5 words
+3. Display blitz sets in a collapsible "⚡ Blitz" section on the home screen
+
+---
+
+### 35. Grade-Level Word Lists (K1–P6)
+
+As a Parent, I want word lists organized by grade level so I can find age-appropriate words.
+
+1. Provide word lists for each grade: K1, K2, P1, P2, P3, P4, P5, P6
+2. Organize grade lists in a collapsible "📚 By Grade" section with sub-headers per grade
+3. Each grade list contains 10 age-appropriate words
+
+---
+
+### 36. Profanity Filter
+
+As a product owner, I want inappropriate words blocked from custom lists.
+
+1. Block words containing profanity from being added to custom lists
+2. Block list names containing profanity
+3. Show a friendly error message when profanity is detected
+
+---
+
+### 37. Sound Effects
+
+As a Child, I want to hear fun sounds during the test so that it feels more engaging.
+
+1. Play a happy chime on correct answers
+2. Play a gentle tone on incorrect answers
+3. Play an exciting sound at streak milestones (3, 5, 10)
+4. Play a click sound on button presses
+
+---
+
+### 38. Voice Unlock System (Honey/Ads)
+
+As a product owner, I want premium voices locked behind honey or ads.
+
+1. Google voice is free and the default
+2. Regular voices cost 10 honey or 1 ad to unlock
+3. Funny premium voices (Chipmunk, Robot, Giant, Fairy, Pirate) cost 20 honey or 2 ads
+4. Show a 5-second countdown when watching an ad to unlock
+5. Each correct answer earns 1 honey
+6. Display honey balance on the voice settings screen
+
+---
+
+### 39. Draw Mode
+
+As a Child, I want to draw letters with my finger or mouse so that I can practise handwriting while spelling.
+
+1. Provide a "Draw" input mode alongside Text and Dictation modes
+2. Display a canvas/drawing area where the child can draw letters
+3. After drawing a letter, provide a "Next Letter" button to clear the canvas and move to the next letter
+4. Display the drawn letters as recognized text (or let the child self-confirm each letter)
+5. Provide a "Clear" button to erase the current drawing
+6. Provide a "Submit" button when at least one letter has been confirmed
+7. The drawing canvas should be large enough for a child to draw comfortably (minimum 200x200 points)
+8. Support both touch (mobile) and mouse (web) input
+9. Use a thick, kid-friendly stroke (4-6px) in a visible color
+10. The mode selector should show three options: Text, Dictation, Draw
