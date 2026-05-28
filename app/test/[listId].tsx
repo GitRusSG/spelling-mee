@@ -176,6 +176,13 @@ export default function TestScreen() {
 
     // Common spoken forms of letters (expanded for better recognition)
     const spokenMap: Record<string, string> = {
+      // NATO phonetic alphabet
+      'alpha': 'A', 'bravo': 'B', 'charlie': 'C', 'delta': 'D', 'echo': 'E',
+      'foxtrot': 'F', 'golf': 'G', 'hotel': 'H', 'india': 'I', 'juliet': 'J',
+      'kilo': 'K', 'lima': 'L', 'mike': 'M', 'november': 'N', 'oscar': 'O',
+      'papa': 'P', 'quebec': 'Q', 'romeo': 'R', 'sierra': 'S', 'tango': 'T',
+      'uniform': 'U', 'victor': 'V', 'whiskey': 'W', 'xray': 'X', 'x-ray': 'X',
+      'yankee': 'Y', 'zulu': 'Z',
       // A
       'ay': 'A', 'a': 'A', 'hey': 'A', 'eh': 'A', 'aye': 'A', 'eight': 'A',
       // B
@@ -813,15 +820,24 @@ export default function TestScreen() {
 
       <View style={styles.inputSection}>
         <View style={styles.modeIconsRow}>
-          <View style={[styles.modeIcon, inputMode === 'text' && styles.modeIconActive]}>
+          <TouchableOpacity
+            style={[styles.modeIcon, inputMode === 'text' && styles.modeIconActive]}
+            onPress={() => { setInputMode('text'); if (letterSequence) setAnswer(letterSequence); }}
+          >
             <Text style={styles.modeIconText}>⌨️</Text>
-          </View>
-          <View style={[styles.modeIcon, inputMode === 'letter-by-letter' && styles.modeIconActive]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeIcon, inputMode === 'letter-by-letter' && styles.modeIconActive]}
+            onPress={() => { setInputMode('letter-by-letter'); if (answer) setLetterSequence(answer); }}
+          >
             <Text style={styles.modeIconText}>🎤</Text>
-          </View>
-          <View style={[styles.modeIcon, inputMode === 'draw' && styles.modeIconActive]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeIcon, inputMode === 'draw' && styles.modeIconActive]}
+            onPress={() => { setInputMode('draw'); if (answer) setLetterSequence(answer); }}
+          >
             <Text style={styles.modeIconText}>✏️</Text>
-          </View>
+          </TouchableOpacity>
         </View>
         <TouchableOpacity
           style={styles.modeToggleButton}

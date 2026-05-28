@@ -22,9 +22,13 @@ const gradeP1Medium = require('../../assets/lists/grade-p1-medium.json');
 const gradeP2Easy = require('../../assets/lists/grade-p2-easy.json');
 const gradeP2Medium = require('../../assets/lists/grade-p2-medium.json');
 const gradeP3Easy = require('../../assets/lists/grade-p3-easy.json');
+const gradeP3Medium = require('../../assets/lists/grade-p3-medium.json');
 const gradeP4Easy = require('../../assets/lists/grade-p4-easy.json');
+const gradeP4Medium = require('../../assets/lists/grade-p4-medium.json');
 const gradeP5Easy = require('../../assets/lists/grade-p5-easy.json');
+const gradeP5Medium = require('../../assets/lists/grade-p5-medium.json');
 const gradeP6Easy = require('../../assets/lists/grade-p6-easy.json');
+const gradeP6Medium = require('../../assets/lists/grade-p6-medium.json');
 
 export const BLITZ_LISTS: BuiltinWordList[] = [
   {
@@ -123,6 +127,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       words: gradeP3Easy.words,
       wordCount: gradeP3Easy.wordCount,
     },
+    {
+      id: gradeP3Medium.id,
+      name: gradeP3Medium.name,
+      type: 'builtin',
+      words: gradeP3Medium.words,
+      wordCount: gradeP3Medium.wordCount,
+    },
   ],
   P4: [
     {
@@ -131,6 +142,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       type: 'builtin',
       words: gradeP4Easy.words,
       wordCount: gradeP4Easy.wordCount,
+    },
+    {
+      id: gradeP4Medium.id,
+      name: gradeP4Medium.name,
+      type: 'builtin',
+      words: gradeP4Medium.words,
+      wordCount: gradeP4Medium.wordCount,
     },
   ],
   P5: [
@@ -141,6 +159,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       words: gradeP5Easy.words,
       wordCount: gradeP5Easy.wordCount,
     },
+    {
+      id: gradeP5Medium.id,
+      name: gradeP5Medium.name,
+      type: 'builtin',
+      words: gradeP5Medium.words,
+      wordCount: gradeP5Medium.wordCount,
+    },
   ],
   P6: [
     {
@@ -149,6 +174,13 @@ export const GRADE_LISTS: Record<string, BuiltinWordList[]> = {
       type: 'builtin',
       words: gradeP6Easy.words,
       wordCount: gradeP6Easy.wordCount,
+    },
+    {
+      id: gradeP6Medium.id,
+      name: gradeP6Medium.name,
+      type: 'builtin',
+      words: gradeP6Medium.words,
+      wordCount: gradeP6Medium.wordCount,
     },
   ],
 };

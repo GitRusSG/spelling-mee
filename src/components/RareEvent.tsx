@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Animated, StyleSheet, Platform } from 'react-native';
+import { View, Text, Animated, StyleSheet, Platform, Dimensions } from 'react-native';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -21,6 +21,7 @@ const RARE_EVENTS = [
 export default function RareEvent({ trigger }: RareEventProps) {
   const [activeEvent, setActiveEvent] = useState<typeof RARE_EVENTS[0] | null>(null);
   const [visible, setVisible] = useState(false);
+  const [eventParticles, setEventParticles] = useState<{x: number, y: Animated.Value, emoji: string}[]>([]);
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.5)).current;
   const triggerCount = useRef(0);
@@ -44,6 +45,23 @@ export default function RareEvent({ trigger }: RareEventProps) {
             storage.set('total_honey', String(current + event.bonusHoney));
           } catch {}
         }
+
+        // Spawn emoji particles
+        const particles = Array.from({length: 12}, () => ({
+          x: Math.random() * (Dimensions.get('window').width || 400),
+          y: new Animated.Value(-30),
+          emoji: event.emoji,
+        }));
+        setEventParticles(particles);
+
+        // Animate particles falling
+        particles.forEach(p => {
+          Animated.timing(p.y, {
+            toValue: (Dimensions.get('window').height || 700) * 0.8,
+            duration: 2000 + Math.random() * 1000,
+            useNativeDriver: Platform.OS !== 'web' ? true : false,
+          }).start();
+        });
 
         // Animate in
         opacity.setValue(0);
@@ -69,18 +87,25 @@ export default function RareEvent({ trigger }: RareEventProps) {
   if (!visible || !activeEvent) return null;
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        { opacity, transform: [{ scale }] },
-      ]}
-      pointerEvents="none"
-      testID="rare-event"
-    >
-      <Text style={styles.emoji}>{activeEvent.emoji}</Text>
-      <Text style={styles.name}>{activeEvent.name}</Text>
-      <Text style={styles.description}>{activeEvent.description}</Text>
-    </Animated.View>
+    <>
+      {eventParticles.map((p, i) => (
+        <Animated.Text key={i} style={{position: 'absolute', left: p.x, top: 0, fontSize: 20 + Math.random() * 10, transform: [{translateY: p.y}], zIndex: 1000}}>
+          {p.emoji}
+        </Animated.Text>
+      ))}
+      <Animated.View
+        style={[
+          styles.container,
+          { opacity, transform: [{ scale }] },
+        ]}
+        pointerEvents="none"
+        testID="rare-event"
+      >
+        <Text style={styles.emoji}>{activeEvent.emoji}</Text>
+        <Text style={styles.name}>{activeEvent.name}</Text>
+        <Text style={styles.description}>{activeEvent.description}</Text>
+      </Animated.View>
+    </>
   );
 }
 

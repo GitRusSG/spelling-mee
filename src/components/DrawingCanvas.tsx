@@ -143,13 +143,13 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
       const uniqueLetters = [...new Set(allLetters)];
 
       if (uniqueLetters.length === 1) {
-        // High confidence — single clear result
+        // High confidence — single clear result, show with Yes/No
         setRecognizedLetter(uniqueLetters[0]);
       } else if (uniqueLetters.length >= 2) {
-        // Multiple possibilities — show them as options (no full grid)
-        setRecognizedLetter(uniqueLetters[0]);
-        // Store alternatives from OCR result
-        setOcrAlternatives(uniqueLetters.slice(0, 4));
+        // Multiple possibilities — show all as options directly
+        setRecognizedLetter(null);
+        setOcrAlternatives(uniqueLetters.slice(0, 5));
+        setShowAlternatives(true);
       } else {
         // OCR couldn't recognize anything — show manual picker
         setShowManualPicker(true);
@@ -184,6 +184,21 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
   const handleManualPick = (letter: string) => {
     onLetterConfirmed(letter.toLowerCase());
     clearForNext();
+  };
+
+  const handleRedraw = () => {
+    const ctx = ctxRef.current;
+    if (ctx) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, 280, 280);
+      ctx.strokeStyle = '#7C4DFF';
+      ctx.lineWidth = 6;
+    }
+    setHasDrawn(false);
+    setRecognizedLetter(null);
+    setOcrAlternatives([]);
+    setShowAlternatives(false);
+    setShowManualPicker(false);
   };
 
   const clearForNext = () => {
@@ -266,6 +281,9 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
               <Text style={styles.rejectButtonText}>✗ No</Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity style={styles.redrawButton} onPress={handleRedraw} testID="redraw-button">
+            <Text style={styles.redrawButtonText}>🔄 Redraw</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -299,6 +317,9 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
           >
             <Text style={styles.noneButtonText}>✗ None of these</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.redrawButton} onPress={handleRedraw} testID="redraw-button">
+            <Text style={styles.redrawButtonText}>🔄 Redraw</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -320,6 +341,9 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
               ))}
             </View>
           ))}
+          <TouchableOpacity style={styles.redrawButton} onPress={handleRedraw} testID="redraw-button">
+            <Text style={styles.redrawButtonText}>🔄 Redraw</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -516,5 +540,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '800',
+  },
+  redrawButton: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#FF6D00',
+  },
+  redrawButtonText: {
+    color: '#E65100',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
