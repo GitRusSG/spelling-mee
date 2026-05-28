@@ -89,6 +89,12 @@ export default function ShopScreen() {
   const [honey, setHoney] = useState(getTotalHoney());
   const [confirmPack, setConfirmPack] = useState<Pack | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [equippedBgId, setEquippedBgId] = useState<string | null>(() => {
+    try { const s = createStorage(); return s.getString('equipped_bg_pack_id') || null; } catch { return null; }
+  });
+  const [equippedTextId, setEquippedTextId] = useState<string | null>(() => {
+    try { const s = createStorage(); return s.getString('equipped_text_pack_id') || null; } catch { return null; }
+  });
 
   const getDiscountedCost = (cost: number) => isSubscribed ? Math.floor(cost * 0.9) : cost;
 
@@ -134,6 +140,14 @@ export default function ShopScreen() {
 
   const handleEquip = (pack: Pack) => {
     equipPack(pack);
+    const storage = createStorage();
+    if (pack.id.startsWith('bg-')) {
+      storage.set('equipped_bg_pack_id', pack.id);
+      setEquippedBgId(pack.id);
+    } else {
+      storage.set('equipped_text_pack_id', pack.id);
+      setEquippedTextId(pack.id);
+    }
     setMessage(`✅ ${pack.name} equipped!`);
     setTimeout(() => setMessage(null), 2000);
   };
@@ -194,7 +208,11 @@ export default function ShopScreen() {
           return (
             <TouchableOpacity
               key={pack.id}
-              style={[styles.packCard, owned && styles.packCardOwned]}
+              style={[
+                styles.packCard,
+                owned && styles.packCardOwned,
+                (pack.id === equippedBgId || pack.id === equippedTextId) && styles.packCardEquipped,
+              ]}
               onPress={() => handlePress(pack, owned)}
               testID={`pack-${pack.id}`}
             >
@@ -204,13 +222,19 @@ export default function ShopScreen() {
                 <Text style={styles.packDescription}>{pack.description}</Text>
               </View>
               {owned ? (
-                <TouchableOpacity
-                  style={styles.equipButton}
-                  onPress={() => handleEquip(pack)}
-                  testID={`equip-${pack.id}`}
-                >
-                  <Text style={styles.equipButtonText}>Equip ✓</Text>
-                </TouchableOpacity>
+                (pack.id === equippedBgId || pack.id === equippedTextId) ? (
+                  <View style={styles.equippedBadge}>
+                    <Text style={styles.equippedBadgeText}>Equipped ✓</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.equipButton}
+                    onPress={() => handleEquip(pack)}
+                    testID={`equip-${pack.id}`}
+                  >
+                    <Text style={styles.equipButtonText}>Equip</Text>
+                  </TouchableOpacity>
+                )
               ) : (
                 isSubscribed ? (
                   <View style={styles.discountContainer}>
@@ -233,7 +257,11 @@ export default function ShopScreen() {
           return (
             <TouchableOpacity
               key={pack.id}
-              style={[styles.packCard, owned && styles.packCardOwned]}
+              style={[
+                styles.packCard,
+                owned && styles.packCardOwned,
+                (pack.id === equippedBgId || pack.id === equippedTextId) && styles.packCardEquipped,
+              ]}
               onPress={() => handlePress(pack, owned)}
               testID={`pack-${pack.id}`}
             >
@@ -243,13 +271,19 @@ export default function ShopScreen() {
                 <Text style={styles.packDescription}>{pack.description}</Text>
               </View>
               {owned ? (
-                <TouchableOpacity
-                  style={styles.equipButton}
-                  onPress={() => handleEquip(pack)}
-                  testID={`equip-${pack.id}`}
-                >
-                  <Text style={styles.equipButtonText}>Equip ✓</Text>
-                </TouchableOpacity>
+                (pack.id === equippedBgId || pack.id === equippedTextId) ? (
+                  <View style={styles.equippedBadge}>
+                    <Text style={styles.equippedBadgeText}>Equipped ✓</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.equipButton}
+                    onPress={() => handleEquip(pack)}
+                    testID={`equip-${pack.id}`}
+                  >
+                    <Text style={styles.equipButtonText}>Equip</Text>
+                  </TouchableOpacity>
+                )
               ) : (
                 isSubscribed ? (
                   <View style={styles.discountContainer}>
@@ -279,6 +313,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: { fontSize: 13, color: '#666', marginBottom: 12 },
   packCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 2, borderWidth: 2, borderColor: '#E0E0E0' },
   packCardOwned: { borderColor: '#4CAF50', backgroundColor: '#F1F8E9' },
+  packCardEquipped: { borderColor: '#FFC107', backgroundColor: '#FFF8E1', borderWidth: 3 },
   packPreview: { fontSize: 32, marginRight: 12 },
   packInfo: { flex: 1 },
   packName: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 2 },
@@ -287,6 +322,8 @@ const styles = StyleSheet.create({
   ownedBadge: { fontSize: 13, fontWeight: '600', color: '#4CAF50' },
   equipButton: { backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
   equipButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  equippedBadge: { backgroundColor: '#FFC107', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
+  equippedBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   discountContainer: { alignItems: 'center' },
   originalCost: { fontSize: 12, color: '#999', textDecorationLine: 'line-through', marginBottom: 2 },
   premiumBanner: { backgroundColor: '#E8F5E9', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, alignSelf: 'center', marginBottom: 16 },

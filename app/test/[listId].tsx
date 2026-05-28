@@ -28,6 +28,8 @@ import ConfettiAnimation from '../../src/components/ConfettiAnimation';
 import DrawingCanvas from '../../src/components/DrawingCanvas';
 import { InputMode } from '../../src/types';
 import { playCorrectSound, playIncorrectSound, playStreakSound, playButtonClickSound } from '../../src/utils/soundEffects';
+import AnimatedBackground from '../../src/components/AnimatedBackground';
+import { getEquippedTextStyle } from '../../src/utils/textStyles';
 
 const ENCOURAGEMENT_MESSAGES = [
   "You're on fire! 🔥",
@@ -100,6 +102,8 @@ export default function TestScreen() {
   const encouragementOpacity = useRef(new Animated.Value(0)).current;
   const streakGlow = useRef(new Animated.Value(0)).current;
   const [showStreakGlow, setShowStreakGlow] = useState(false);
+
+  const equippedTextStyle = getEquippedTextStyle();
 
   const handleAdClose = useCallback(() => {
     setShowAd(false);
@@ -635,6 +639,7 @@ export default function TestScreen() {
 
   return (
     <View style={styles.container}>
+      <AnimatedBackground />
       <InterstitialAd visible={showAd} onClose={handleAdClose} />
       <ConfettiAnimation trigger={confettiTrigger} intensity="small" />
       <View style={styles.honeyBadge} testID="honey-badge">
@@ -776,7 +781,7 @@ export default function TestScreen() {
         {inputMode === 'text' ? (
           <>
             <View style={styles.letterDisplay} testID="answer-display">
-              <Text style={styles.letterDisplayText} testID="answer-display-text">
+              <Text style={[styles.letterDisplayText, equippedTextStyle]} testID="answer-display-text">
                 {answer || ' '}
               </Text>
             </View>
@@ -795,7 +800,7 @@ export default function TestScreen() {
             </Text>
 
             <View style={styles.letterDisplay} testID="letter-display">
-              <Text style={styles.letterDisplayText} testID="letter-display-text">
+              <Text style={[styles.letterDisplayText, equippedTextStyle]} testID="letter-display-text">
                 {letterSequence || ' '}
               </Text>
             </View>
@@ -845,7 +850,7 @@ export default function TestScreen() {
             </Text>
 
             <View style={styles.letterDisplay} testID="letter-display">
-              <Text style={styles.letterDisplayText} testID="letter-display-text">
+              <Text style={[styles.letterDisplayText, equippedTextStyle]} testID="letter-display-text">
                 {letterSequence || ' '}
               </Text>
             </View>
