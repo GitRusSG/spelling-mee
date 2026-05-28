@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 
 interface DrawingCanvasProps {
   onLetterConfirmed: (letter: string) => void;
@@ -17,7 +17,9 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
   const canvasRef = useRef<any>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
-  const [showLetterPicker, setShowLetterPicker] = useState(false);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [recognizedLetter, setRecognizedLetter] = useState<string | null>(null);
+  const [showManualPicker, setShowManualPicker] = useState(false);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
   useEffect(() => {
@@ -32,17 +34,14 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#7C4DFF';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
   }, []);
 
   const getPosition = (e: any) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
   const getTouchPosition = (e: any) => {
@@ -50,10 +49,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0] || e.changedTouches[0];
-    return {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top,
-    };
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
   };
 
   const startDrawing = (e: any) => {
@@ -64,6 +60,8 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     ctx.moveTo(pos.x, pos.y);
     setIsDrawing(true);
     setHasDrawn(true);
+    setRecognizedLetter(null);
+    setShowManualPicker(false);
   };
 
   const draw = (e: any) => {
@@ -88,6 +86,8 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     ctx.moveTo(pos.x, pos.y);
     setIsDrawing(true);
     setHasDrawn(true);
+    setRecognizedLetter(null);
+    setShowManualPicker(false);
   };
 
   const handleTouchMove = (e: any) => {
@@ -106,28 +106,72 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, 280, 280);
     ctx.strokeStyle = '#7C4DFF';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
     setHasDrawn(false);
-    setShowLetterPicker(false);
+    setRecognizedLetter(null);
+    setShowManualPicker(false);
     onClear();
   };
 
-  const handleDone = () => {
-    setShowLetterPicker(true);
+  const handleRecognize = async () => {
+    if (!canvasRef.current) return;
+    setIsRecognizing(true);
+    setRecognizedLetter(null);
+
+    try {
+      const Tesseract = await import('tesseract.js');
+      const canvas = canvasRef.current;
+      const dataUrl = canvas.toDataURL('image/png');
+
+      const result = await Tesseract.recognize(dataUrl, 'eng', {
+        logger: () => {},
+      });
+
+      const text = result.data.text.trim().toUpperCase();
+      // Extract first letter character from the result
+      const match = text.match(/[A-Z]/);
+      if (match) {
+        setRecognizedLetter(match[0]);
+      } else {
+        // OCR couldn't recognize — show manual picker
+        setShowManualPicker(true);
+      }
+    } catch {
+      // Fallback to manual picker on error
+      setShowManualPicker(true);
+    } finally {
+      setIsRecognizing(false);
+    }
   };
 
-  const handleLetterPick = (letter: string) => {
+  const handleConfirmRecognized = () => {
+    if (recognizedLetter) {
+      onLetterConfirmed(recognizedLetter.toLowerCase());
+      clearForNext();
+    }
+  };
+
+  const handleReject = () => {
+    setRecognizedLetter(null);
+    setShowManualPicker(true);
+  };
+
+  const handleManualPick = (letter: string) => {
     onLetterConfirmed(letter.toLowerCase());
-    // Clear canvas for next letter
+    clearForNext();
+  };
+
+  const clearForNext = () => {
     const ctx = ctxRef.current;
     if (ctx) {
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, 280, 280);
       ctx.strokeStyle = '#7C4DFF';
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 6;
     }
     setHasDrawn(false);
-    setShowLetterPicker(false);
+    setRecognizedLetter(null);
+    setShowManualPicker(false);
   };
 
   if (Platform.OS !== 'web') {
@@ -151,6 +195,7 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
             border: '3px solid #CE93D8',
             background: '#fff',
             touchAction: 'none',
+            cursor: 'crosshair',
           }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
@@ -161,30 +206,53 @@ export default function DrawingCanvas({ onLetterConfirmed, onClear, letterIndex 
           onTouchEnd={stopDrawing}
         />
       </View>
+
+      {/* Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity style={styles.clearButton} onPress={handleClear} testID="draw-clear-button">
           <Text style={styles.clearButtonText}>🗑️ Clear</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.doneButton, !hasDrawn && styles.doneButtonDisabled]}
-          onPress={handleDone}
-          disabled={!hasDrawn || showLetterPicker}
+          style={[styles.doneButton, (!hasDrawn || isRecognizing) && styles.doneButtonDisabled]}
+          onPress={handleRecognize}
+          disabled={!hasDrawn || isRecognizing}
           testID="draw-done-button"
         >
-          <Text style={styles.doneButtonText}>Done ✓</Text>
+          {isRecognizing ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.doneButtonText}>Recognize ✨</Text>
+          )}
         </TouchableOpacity>
       </View>
 
-      {showLetterPicker && (
+      {/* Recognition result */}
+      {recognizedLetter && (
+        <View style={styles.recognitionResult} testID="recognition-result">
+          <Text style={styles.recognitionLabel}>I think you drew:</Text>
+          <Text style={styles.recognizedLetter}>{recognizedLetter}</Text>
+          <View style={styles.confirmRow}>
+            <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmRecognized} testID="confirm-letter">
+              <Text style={styles.confirmButtonText}>✓ Yes!</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.rejectButton} onPress={handleReject} testID="reject-letter">
+              <Text style={styles.rejectButtonText}>✗ No</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Manual picker fallback */}
+      {showManualPicker && (
         <View style={styles.letterPickerContainer} testID="letter-picker">
-          <Text style={styles.letterPickerLabel}>I drew the letter:</Text>
+          <Text style={styles.letterPickerLabel}>Which letter did you draw?</Text>
           {LETTER_ROWS.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.letterRow}>
               {row.map((letter) => (
                 <TouchableOpacity
                   key={letter}
                   style={styles.letterButton}
-                  onPress={() => handleLetterPick(letter)}
+                  onPress={() => handleManualPick(letter)}
                   testID={`pick-letter-${letter}`}
                 >
                   <Text style={styles.letterButtonText}>{letter}</Text>
@@ -257,6 +325,57 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#fff',
+  },
+  recognitionResult: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 300,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  recognitionLabel: {
+    fontSize: 14,
+    color: '#2E7D32',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  recognizedLetter: {
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#4CAF50',
+    marginBottom: 12,
+  },
+  confirmRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    minHeight: 40,
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  rejectButton: {
+    backgroundColor: '#FF5252',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    minHeight: 40,
+  },
+  rejectButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   letterPickerContainer: {
     backgroundColor: '#EDE7F6',
