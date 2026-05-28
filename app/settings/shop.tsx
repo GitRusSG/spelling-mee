@@ -93,33 +93,34 @@ export default function ShopScreen() {
   const handleBuy = (pack: Pack) => {
     const cost = getDiscountedCost(pack.cost);
     if (honey < cost) {
-      Alert.alert('Not Enough Honey', `You need ${cost} 🍯 but only have ${honey} 🍯. Keep spelling to earn more!`);
+      if (typeof window !== 'undefined') {
+        window.alert(`Not enough honey! You need ${cost} 🍯 but only have ${honey} 🍯. Keep spelling to earn more!`);
+      }
       return;
     }
 
-    Alert.alert(
-      'Buy Pack',
-      `Unlock "${pack.name}" for ${cost} 🍯?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: `Buy (${cost} 🍯)`,
-          onPress: () => {
-            if (spendHoney(cost)) {
-              saveUnlockedPack(pack.id);
-              setUnlockedPacks((prev) => [...prev, pack.id]);
-              setHoney((prev) => prev - cost);
-              Alert.alert('🎉 Unlocked!', `${pack.name} is now yours! Equip it in Settings.`);
-            }
-          },
-        },
-      ]
-    );
+    // Use window.confirm on web since Alert.alert buttons don't work
+    const confirmed = typeof window !== 'undefined'
+      ? window.confirm(`Unlock "${pack.name}" for ${cost} 🍯?`)
+      : true;
+
+    if (confirmed) {
+      if (spendHoney(cost)) {
+        saveUnlockedPack(pack.id);
+        setUnlockedPacks((prev) => [...prev, pack.id]);
+        setHoney((prev) => prev - cost);
+        if (typeof window !== 'undefined') {
+          window.alert(`🎉 Unlocked! ${pack.name} is now yours! Tap it again to equip.`);
+        }
+      }
+    }
   };
 
   const handleEquip = (pack: Pack) => {
     equipPack(pack);
-    Alert.alert('✅ Equipped!', `${pack.name} is now active!`);
+    if (typeof window !== 'undefined') {
+      window.alert(`✅ ${pack.name} is now active!`);
+    }
   };
 
   const handlePress = (pack: Pack, owned: boolean) => {

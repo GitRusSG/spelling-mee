@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useTestSession, buildResult } from '../../src/contexts/TestSessionContext';
 import { TestSession } from '../../src/types';
 import ConfettiAnimation from '../../src/components/ConfettiAnimation';
+import QuizCompleteAnimation from '../../src/components/QuizCompleteAnimation';
 import { createStorage } from '../../src/services/storage';
 
 function getScoreEmoji(percentage: number): string {
@@ -150,6 +151,7 @@ export default function ResultsScreen() {
       testID="results-screen"
     >
       <ConfettiAnimation trigger={showConfetti} intensity="large" />
+      <QuizCompleteAnimation trigger={true} score={result.percentageCorrect} />
 
       <Text style={styles.title}>{emoji} {message}</Text>
 
