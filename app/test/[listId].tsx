@@ -589,9 +589,18 @@ export default function TestScreen() {
     if (isCorrect) {
       const delay = getAutoContinueDelay();
       if (delay > 0) {
+        // Capture the next word index NOW (after submitAnswer advanced it)
+        const nextWordIndex = currentIndex + 1;
         setTimeout(() => {
-          setRareEventTrigger(prev => !prev); // Trigger rare event check
-          handleContinue();
+          setRareEventTrigger(prev => !prev);
+          setFeedback(null);
+          setConfettiTrigger(false);
+          setDrawLetterCount(0);
+          setLetterSequence('');
+          setAnswer('');
+          if (sessionWordList && nextWordIndex < sessionWordList.words.length) {
+            playWord(sessionWordList.words[nextWordIndex]);
+          }
         }, delay);
       }
     }
@@ -607,9 +616,9 @@ export default function TestScreen() {
     setLetterSequence('');
     setAnswer('');
     setRareEventTrigger(prev => !prev);
-    const nextIndex = currentIndex;
-    if (nextIndex < sessionWordList.words.length) {
-      playWord(sessionWordList.words[nextIndex]);
+    // currentIndex is already advanced by submitAnswer, so it points to the next word
+    if (currentIndex < sessionWordList.words.length) {
+      playWord(sessionWordList.words[currentIndex]);
     }
   }, [sessionWordList, currentIndex, playWord]);
 
