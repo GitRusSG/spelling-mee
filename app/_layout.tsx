@@ -1,4 +1,4 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { WordListProvider } from '../src/contexts/WordListContext';
@@ -44,10 +44,52 @@ function InnerLayout() {
 
   useEffect(() => {
     setBgColor(getThemeBackground());
-    // Re-check periodically (simple polling for when user equips a new pack)
     const interval = setInterval(() => {
       setBgColor(getThemeBackground());
     }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Apply global text style on web via CSS injection
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const applyGlobalTextStyle = () => {
+      try {
+        const storage = createStorage();
+        const packId = storage.getString('equipped_text_pack_id') || null;
+        let css = '';
+        switch (packId) {
+          case 'text-bubble':
+            css = '* { letter-spacing: 2px !important; font-weight: 900 !important; }';
+            break;
+          case 'text-pixel':
+            css = '* { font-family: monospace !important; letter-spacing: 1px !important; }';
+            break;
+          case 'text-rainbow':
+            css = 'h1, h2, h3, [data-testid] { color: #FF6D00 !important; }';
+            break;
+          case 'text-glow':
+            css = '* { text-shadow: 0 0 8px #7C4DFF !important; }';
+            break;
+          case 'text-handwritten':
+            css = '* { font-style: italic !important; font-weight: 300 !important; letter-spacing: 1px !important; }';
+            break;
+          default:
+            css = '';
+        }
+        let styleEl = document.getElementById('spelling-mee-text-style');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'spelling-mee-text-style';
+          document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = css;
+      } catch {}
+    };
+    applyGlobalTextStyle();
+    const interval = setInterval(applyGlobalTextStyle, 2000);
+    return () => clearInterval(interval);
+  }, []);
     return () => clearInterval(interval);
   }, []);
 
